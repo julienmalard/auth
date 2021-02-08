@@ -54,7 +54,6 @@ import { assert } from '/util'
  * @param options.sequencer A function that takes two sequences and returns a single sequence,
  * applying any logic regarding which links are omitted
  */
-
 export const getSequence = <A extends Action>(options: SequenceOptions<A>): ActionLink<A>[] => {
   const {
     chain,
@@ -90,10 +89,10 @@ export const getSequence = <A extends Action>(options: SequenceOptions<A>): Acti
     // then continue from there
 
     // the two links merged by the merge link
-    let branchHeads = head.body.map((hash) => chain.links[hash]!) as [Link<A>, Link<A>]
+    let branchHeads = head.body.map(hash => chain.links[hash]!) as [Link<A>, Link<A>]
 
     // their most recent common predecessor
-    const commonPredecessor = getCommonPredecessor(chain, branchHeads)
+    const commonPredecessor = getCommonPredecessor(chain, ...branchHeads)
 
     // The common predecessor *precedes* the *root* we've been given, so the root lives *on* one
     // of these two branches.
@@ -140,7 +139,7 @@ export const getSequence = <A extends Action>(options: SequenceOptions<A>): Acti
   }
 
   // omit merge links before returning result
-  return result.filter((n) => !isMergeLink(n)) as ActionLink<A>[]
+  return result.filter(n => !isMergeLink(n)) as ActionLink<A>[]
 }
 
 type SequenceOptions<A extends Action> = {
@@ -153,9 +152,9 @@ type SequenceOptions<A extends Action> = {
 
 // This resolver just collapses each branch to a single sequence of actions
 export const baseResolver: Resolver = ([a, b], chain) => {
-  const root = getCommonPredecessor(chain, [a, b])
+  const root = getCommonPredecessor(chain, a, b)
   const [branchA, branchB] = [a, b]
-    .map((head) => getSequence({ chain, root, head })) // get the branch corresponding to each head
-    .map((branch) => branch.slice(1)) // omit the common predecessor itself
+    .map(head => getSequence({ chain, root, head })) // get the branch corresponding to each head
+    .map(branch => branch.slice(1)) // omit the common predecessor itself
   return [branchA, branchB]
 }
