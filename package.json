@@ -56,7 +56,7 @@
     "semi": false,
     "singleQuote": true,
     "trailingComma": "es5",
-    "arrowParens": "always"
+    "arrowParens": "avoid"
   },
   "eslintConfig": {
     "rules": {
