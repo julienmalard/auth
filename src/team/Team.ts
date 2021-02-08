@@ -45,18 +45,6 @@ import { assert, debug, Hash, Optional, Payload } from '/util'
 
 const { DEVICE, ROLE, MEMBER } = KeyType
 
-/*
-
-WIP: Straighten out devices vs users
-
-These things we hold to be true:
-- A device that's been invited and is in the process of joining doesn't know its user's secret keys
-- That device will eventually get the user's credentials etc. from lockboxes, but to do that we need
-  to be able to instantiate a team without a user
-- A user, on the other hand, will always have a device. so we can make the device required
-
-*/
-
 /**
  * The `Team` class wraps a `TeamSignatureChain` and exposes methods for adding and removing
  * members, assigning roles, creating and using invitations, and encrypting messages for
