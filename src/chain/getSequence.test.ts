@@ -1,6 +1,6 @@
 import { randomKey } from '@herbcaudill/crypto'
 import { arbitraryDeterministicSort } from './arbitraryDeterministicSort'
-import { append, create, getSequence, Sequencer } from '/chain'
+import { append, baseResolver, create, getSequence, Resolver, Sequencer, SignedLink } from '/chain'
 import { buildChain, findByPayload, getPayloads } from '/chain/testUtils'
 import { setup } from '/util/testing'
 
@@ -128,29 +128,39 @@ describe('chains', () => {
         expect(expected).toContainEqual(getPayloads(sequence))
       })
 
-      // TODO: reenable this test
-      //   test('custom sequencer', () => {
-      //     const sequencer: sequencer = (a, b) => {
-      //       const [_a, _b] = [a, b].sort() // ensure deterministic order
+      test('custom sequencer', () => {
+        // sequence rules: `i`s go first, otherwise alphabetical
+        const sequencer: Sequencer = (a, b) => {
+          const alpha = (a: AnyLink, b: AnyLink) => (a.body.payload > b.body.payload ? 1 : -1)
+          const merged = a.concat(b).sort(alpha) as AnyLink[]
 
-      //       // rule 1: `i`s go first
-      //       // rule 2: `e`s are omitted
-      //       const merged = _a.concat(_b) as SignedLink<any, any>[]
-      //       return merged
-      //         .filter(n => n.body.payload === 'i')
-      //         .concat(merged.filter(n => n.body.payload !== 'e' && n.body.payload !== 'i'))
-      //     }
+          const isI = (n: AnyLink) => n.body.payload === 'i'
+          const Is = merged.filter((n) => isI(n))
+          const notIs = merged.filter((n) => !isI(n))
 
-      //     const sequence = getSequence({ chain, sequencer })
+          return Is.concat(notIs)
+        }
 
-      //     // note that `i` comes first and `e` is omitted
-      //     const expected = 'a b   i    j k l   h   c d f g    o n'
+        // inclusion rules: `e`s are omitted
+        const resolver: Resolver = ([a, b], chain) => {
+          const [_a, _b] = baseResolver([a, b], chain)
 
-      //     expect(getPayloads(sequence)).toEqual(split(expected))
-      //   })
+          const eFilter = (n: AnyLink) => n.body.payload !== 'e'
+          return [_a.filter(eFilter), _b.filter(eFilter)]
+        }
+
+        const sequence = getSequence({ chain, sequencer, resolver })
+
+        // note that `i` comes first in the merged portion, and `e` is omitted
+        const expected = 'a b   i c d f g h j k l o    n'
+
+        expect(getPayloads(sequence)).toEqual(split(expected))
+      })
     })
   })
 })
 
 // split on whitespace
 const split = (s: string) => s.split(/\s*/)
+
+type AnyLink = SignedLink<any, any>
