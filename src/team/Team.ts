@@ -13,7 +13,7 @@ import {
 import { membershipSequencer } from '/chain/membershipSequencer'
 import { LocalDeviceContext, LocalUserContext } from '/context'
 import * as devices from '/device'
-import { DeviceWithSecrets, getDeviceId, PublicDevice, redactDevice } from '/device'
+import { getDeviceId, PublicDevice, redactDevice } from '/device'
 import * as invitations from '/invitation'
 import { Invitee, ProofOfInvitation } from '/invitation'
 import { normalize } from '/invitation/normalize'
@@ -21,7 +21,6 @@ import * as keysets from '/keyset'
 import {
   ADMIN_SCOPE,
   isKeyset,
-  KeyMetadata,
   KeyScope,
   KeysetWithSecrets,
   KeyType,
@@ -41,7 +40,7 @@ import { getVisibleScopes } from '/team/selectors'
 import { EncryptedEnvelope, isNewTeam, SignedEnvelope, TeamOptions, TeamState } from '/team/types'
 import * as users from '/user'
 import { User } from '/user'
-import { assert, debug, Hash, Optional, Payload } from '/util'
+import { assert, debug, Hash, Payload } from '/util'
 
 const { DEVICE, ROLE, MEMBER } = KeyType
 
