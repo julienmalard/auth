@@ -1,5 +1,3 @@
-import { clone } from '/util'
-import { LocalUserContext } from '/context'
 import * as devices from '/device'
 import { getDeviceId } from '/device'
 import { generateProof, ProofOfInvitation } from '/invitation'
@@ -7,7 +5,9 @@ import { ADMIN } from '/role'
 import * as teams from '/team'
 import { setup } from '/util/testing'
 import { KeyType } from '/keyset'
+import { generateStarterKeys } from '/invitation/generateStarterKeys'
 
+const { MEMBER, DEVICE } = KeyType
 describe('Team', () => {
   describe('invitations', () => {
     describe('members', () => {
@@ -82,7 +82,7 @@ describe('Team', () => {
         // 🦹‍♀️ Eve intercepts the invitation and tries to use it by swapping out Bob's name for hers
         const forgedProofOfInvitation: ProofOfInvitation = {
           ...proofOfInvitation,
-          invitee: { type: KeyType.MEMBER, name: 'eve' },
+          invitee: { type: MEMBER, name: 'eve' },
         }
 
         // 🦹‍♀️ Eve shows 👩🏾 Alice her fake proof of invitation
@@ -152,35 +152,33 @@ describe('Team', () => {
     })
 
     describe('devices', () => {
-      // TODO
-      it.skip('creates and accepts an invitation for a device', () => {
+      it('creates and accepts an invitation for a device', () => {
         const { alice } = setup(['alice'])
 
-        const phone = devices.create('alice', 'alicez phone')
-
-        const { deviceName } = phone
-        const deviceId = getDeviceId(phone)
-
-        const phoneContext: LocalUserContext = { user: alice.user, device: phone }
+        const deviceName = 'alicez phone'
 
         // 👩🏾 Alice only has 💻 one device on the signature chain
         expect(alice.team.members('alice').devices).toHaveLength(1)
 
         // 💻 on her laptop, Alice generates an invitation for her phone
-        const { id, seed } = alice.team.invite({ deviceName })
+        const { seed } = alice.team.invite({ deviceName })
 
         // 📱 Alice gets the seed to her phone, perhaps by typing it in or by scanning a QR code.
-        // Alice's phone uses the seed to generate proof of invitation
-        const proofOfInvitation = generateProof(seed, { type: KeyType.DEVICE, name: deviceId })
+        // Alice's phone uses the seed to generate her starter keys and her proof of invitation
+        const phone = devices.create('alice', deviceName)
+        const deviceId = getDeviceId(phone)
+        phone.keys = generateStarterKeys({ type: DEVICE, name: deviceId }, seed)
+        const proofOfInvitation = generateProof(seed, { type: DEVICE, name: deviceId })
 
         // 📱 Alice's phone connects with 💻 her laptop and presents the proof
         alice.team.admit(proofOfInvitation)
 
         // 👍 The proof was good, so the laptop sends the phone the team's signature chain
-        const phoneTeam = teams.load(clone(alice.team.chain), phoneContext)
+        const savedTeam = alice.team.save()
+        const phoneTeam = teams.load(savedTeam, { device: phone })
 
-        // 📱 Alice's phone "joins" the team (adds itself to the signature chain)
-        phoneTeam.join(proofOfInvitation)
+        // 📱 Alice's phone joins the team
+        const { user, device } = phoneTeam.join(proofOfInvitation)
 
         // ✅ Now Alice has 💻📱 two devices on the signature chain
         expect(phoneTeam.members('alice').devices).toHaveLength(2)
