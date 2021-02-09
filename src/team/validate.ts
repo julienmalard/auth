@@ -58,12 +58,12 @@ const validators: TeamStateValidatorSet = {
     return VALID
   },
 
+  // TODO: canOnlyChangeYourOwnKeys
   canOnlyChangeYourOwnKeys: (...args) => {
     const [prevState, link] = args
     if (link.body.type === 'CHANGE_MEMBER_KEYS') {
       const linkAuthorScope = { type: 'MEMBER', name: link.signed.userName } as KeyScope
-
-      // TODO
+      //...
     }
     return VALID
   },
@@ -75,7 +75,7 @@ const validators: TeamStateValidatorSet = {
       const { deviceName, userName } = device
       const member = select.member(prevState, userName)
       const { devices = [] } = member
-      if (devices.find((d) => d.deviceName === deviceName))
+      if (devices.find(d => d.deviceName === deviceName))
         return fail(`The member ${userName} already has a device named '${deviceName}'`, ...args)
     }
     return VALID
