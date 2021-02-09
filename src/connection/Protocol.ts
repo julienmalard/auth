@@ -72,7 +72,7 @@ export class Protocol extends EventEmitter {
     }).withContext(context)
 
     // instantiate the machine
-    this.machine = interpret(machine).onTransition((state) => {
+    this.machine = interpret(machine).onTransition(state => {
       const summary = stateSummary(state.value)
       this.emit('change', summary)
       this.log(`⏩ ${summary}`)
@@ -189,7 +189,7 @@ export class Protocol extends EventEmitter {
 
   /** These are referred to by name in `connectionMachine` (e.g. `actions: 'sendHello'`) */
   private readonly actions: Record<string, StateMachineAction> = {
-    sendHello: async (context) => {
+    sendHello: async context => {
       this.sendMessage({
         type: 'HELLO',
         payload: {
@@ -203,8 +203,6 @@ export class Protocol extends EventEmitter {
     },
 
     // authenticating
-
-    // TODO: authentication should always use device keys, not member keys
 
     receiveHello: assign({
       theirIdentityClaim: (_, event) => {
@@ -223,7 +221,7 @@ export class Protocol extends EventEmitter {
       },
     }),
 
-    acceptInvitation: (context) => {
+    acceptInvitation: context => {
       assert(context.team)
       // welcome them by sending the team's signature chain, so they can reconstruct team membership state
       this.sendMessage({
@@ -247,7 +245,7 @@ export class Protocol extends EventEmitter {
     },
 
     challengeIdentity: assign({
-      challenge: (context) => {
+      challenge: context => {
         const identityClaim = context.theirIdentityClaim!
         const challenge = identity.challenge(identityClaim)
         this.sendMessage({
@@ -270,7 +268,7 @@ export class Protocol extends EventEmitter {
     },
 
     storePeer: assign({
-      peer: (context) => {
+      peer: context => {
         assert(context.team)
         assert(context.theirIdentityClaim)
         // TODO: team.members(theirIdentityClaim) ?
@@ -280,7 +278,7 @@ export class Protocol extends EventEmitter {
       },
     }),
 
-    acceptIdentity: (_) => {
+    acceptIdentity: _ => {
       this.sendMessage({
         type: 'ACCEPT_IDENTITY',
         payload: {},
@@ -289,7 +287,7 @@ export class Protocol extends EventEmitter {
 
     // updating
 
-    sendUpdate: (context) => {
+    sendUpdate: context => {
       assert(context.team)
       const { root, head, links } = context.team.chain
       const hashes = Object.keys(links)
@@ -327,8 +325,8 @@ export class Protocol extends EventEmitter {
 
       // send them every link that we have that they don't have
       const missingLinks = hashes
-        .filter((hash) => theirHashes.includes(hash) === false)
-        .map((hash) => links[hash])
+        .filter(hash => theirHashes.includes(hash) === false)
+        .map(hash => links[hash])
 
       if (missingLinks.length > 0) {
         this.sendMessage({
@@ -357,8 +355,8 @@ export class Protocol extends EventEmitter {
         } as TeamLinkMap
 
         // make sure we're not missing any links that are referenced by these new links (shouldn't happen)
-        const parentHashes = theirLinksArray.flatMap((link) => getParentHashes(chain, link))
-        const missingParents = parentHashes.filter((hash) => !(hash in allLinks))
+        const parentHashes = theirLinksArray.flatMap(link => getParentHashes(chain, link))
+        const missingParents = parentHashes.filter(hash => !(hash in allLinks))
         assert(
           missingParents.length === 0,
           `Can't update; missing parent links: \n${missingParents.join('\n')}`
@@ -376,7 +374,7 @@ export class Protocol extends EventEmitter {
       // Following an update, we may have new information about the peer
       // (specifically, if they just joined with an invitation, we'll have received
       // their real public keys). So we need to get that on context now.
-      peer: (context) => {
+      peer: context => {
         assert(context.peer)
         assert(context.team)
         const userName = context.peer.userName
@@ -390,7 +388,7 @@ export class Protocol extends EventEmitter {
       },
     }),
 
-    listenForUpdates: (context) => {
+    listenForUpdates: context => {
       assert(context.team)
       context.team.addListener('updated', ({ head }) => {
         if (!this.machine.state.done) {
@@ -402,9 +400,9 @@ export class Protocol extends EventEmitter {
 
     // negotiating
 
-    generateSeed: assign({ seed: (_) => randomKey() }),
+    generateSeed: assign({ seed: _ => randomKey() }),
 
-    sendSeed: (context) => {
+    sendSeed: context => {
       assert(context.user)
       assert(context.peer)
       assert(context.seed)
@@ -474,16 +472,16 @@ export class Protocol extends EventEmitter {
 
   /** These are referred to by name in `connectionMachine` (e.g. `cond: 'iHaveInvitation'`) */
   private readonly guards: Record<string, Condition> = {
-    iHaveInvitation: (context) => hasInvitee(context),
+    iHaveInvitation: context => hasInvitee(context),
 
-    theyHaveInvitation: (context) => context.theyHaveInvitation === true,
+    theyHaveInvitation: context => context.theyHaveInvitation === true,
 
     bothHaveInvitation: (...args) =>
       this.guards.iHaveInvitation(...args) && this.guards.theyHaveInvitation(...args),
 
     // TODO smells bad that this guard has the side effect of admitting the person - split this up
     // into two processes, first validating their proof, then admitting them
-    invitationProofIsValid: (context) => {
+    invitationProofIsValid: context => {
       assert(context.team)
       assert(context.theirProofOfInvitation)
 
@@ -502,7 +500,7 @@ export class Protocol extends EventEmitter {
       return team.hasInvitation(this.myProofOfInvitation(context))
     },
 
-    identityIsKnown: (context) => {
+    identityIsKnown: context => {
       // TODO: much of this should be moved to Team
       if (context.team === undefined) return true
       const deviceId = context.theirIdentityClaim!.name
@@ -511,7 +509,7 @@ export class Protocol extends EventEmitter {
         context.team.has(userName) &&
         context.team
           .members(userName)
-          .devices!.map((d) => d.deviceName)
+          .devices!.map(d => d.deviceName)
           .includes(deviceName)
       )
     },
@@ -551,9 +549,9 @@ export class Protocol extends EventEmitter {
 
     headsAreDifferent: (...args) => !this.guards.headsAreEqual(...args),
 
-    dontHaveSessionkey: (context) => context.sessionKey === undefined,
+    dontHaveSessionkey: context => context.sessionKey === undefined,
 
-    peerWasRemoved: (context) => {
+    peerWasRemoved: context => {
       assert(context.team)
       assert(context.peer)
       return context.team.has(context.peer.userName) === false
@@ -595,6 +593,6 @@ const stateSummary = (state: any = 'disconnected'): string =>
       ? ''
       : state
     : Object.keys(state)
-        .map((key) => `${key}:${stateSummary(state[key])}`)
-        .filter((s) => s.length)
+        .map(key => `${key}:${stateSummary(state[key])}`)
+        .filter(s => s.length)
         .join(',')

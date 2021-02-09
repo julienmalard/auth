@@ -647,7 +647,6 @@ describe('connection', () => {
     expect(bob.team.has('alice')).toBe(true)
   })
 
-  // TODO
   it.skip('connects an invitee after one failed attempt', async () => {
     const { alice, bob } = setup(['alice', { user: 'bob', member: false }])
 
@@ -667,10 +666,6 @@ describe('connection', () => {
     // 👨🏻‍🦲📧<->👩🏾 Bob tries again with the right code this time
     bob.connectionContext = { ...bob.connectionContext, invitationSeed: 'passw0rd' }
 
-    //
-    //
-    //
-    //
     // TODO: we can make this work by uncommenting the following lines, which start Alice and Bob
     // out with shiny new connections. However we want Bob to be able to try again with the same
     // connection. Maybe the answer is to separate out presenting an invitation from the HELLO message?
