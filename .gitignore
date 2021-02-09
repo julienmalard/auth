@@ -6,3 +6,4 @@ temp.txt
 node_modules
 dist
 .profiles
+.vscode
