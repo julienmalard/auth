@@ -308,7 +308,7 @@ export class Team extends EventEmitter {
   /** Find a member's device by name */
   public getDevice = (userName: string, deviceName: string): PublicDevice => {
     const memberDevices = this.members(userName).devices || []
-    const device = memberDevices.find((d) => d.deviceName === deviceName)
+    const device = memberDevices.find(d => d.deviceName === deviceName)
     if (device === undefined)
       throw new Error(`Member ${userName} does not have a device called ${deviceName}`)
     return device
@@ -428,8 +428,19 @@ export class Team extends EventEmitter {
 
   /** Revoke an invitation. */
   public revokeInvitation = (id: string) => {
-    // TODO: we should also remove the device or member that was added
-    // for that, we need to open the invitation
+    // remove the device or user that was invited
+    const invitation = this.getInvitation(id)
+    const invitationBody = invitations.open(invitation, this.teamKeys())
+    const { type, name } = invitationBody.invitee
+    if (type === DEVICE) {
+      const { userName, deviceName } = devices.parseDeviceId(name)
+      this.removeDevice(userName, deviceName)
+    } else if (type === MEMBER) {
+      const userName = name
+      this.remove(userName)
+    }
+
+    // mark the invitation as revoked
     this.dispatch({
       type: 'REVOKE_INVITATION',
       payload: { id },
@@ -668,19 +679,19 @@ export class Team extends EventEmitter {
 
     // identify all the keys that are indirectly compromised
     const visibleScopes = getVisibleScopes(this.state, compromised)
-    const otherNewKeysets = visibleScopes.map((scope) => keysets.create(scope))
+    const otherNewKeysets = visibleScopes.map(scope => keysets.create(scope))
 
     // generate new keys for each one
     const newKeysets = [newKeyset, ...otherNewKeysets]
 
     // create new lockboxes for each of these
-    const newLockboxes = newKeysets.flatMap((newKeyset) => {
+    const newLockboxes = newKeysets.flatMap(newKeyset => {
       const scope = getScope(newKeyset)
       const oldLockboxes = select.lockboxesInScope(this.state, scope)
 
-      return oldLockboxes.map((oldLockbox) => {
+      return oldLockboxes.map(oldLockbox => {
         // check whether we have new keys for the recipient of this lockbox
-        const updatedKeyset = newKeysets.find((k) => scopesMatch(k, oldLockbox.recipient))
+        const updatedKeyset = newKeysets.find(k => scopesMatch(k, oldLockbox.recipient))
         return lockbox.rotate({
           oldLockbox,
           newContents: newKeyset,
