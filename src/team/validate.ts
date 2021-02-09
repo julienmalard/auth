@@ -1,5 +1,6 @@
 ﻿import { isAdminOnlyAction } from '../chain/isAdminOnlyAction'
 import { ActionLink, ROOT } from '/chain'
+import { parseDeviceId } from '/device'
 import { KeyScope } from '/keyset'
 import * as select from '/team/selectors'
 import { TeamState, TeamStateValidator, TeamStateValidatorSet, ValidationArgs } from '/team/types'
@@ -58,12 +59,20 @@ const validators: TeamStateValidatorSet = {
     return VALID
   },
 
-  // TODO: canOnlyChangeYourOwnKeys
   canOnlyChangeYourOwnKeys: (...args) => {
     const [prevState, link] = args
     if (link.body.type === 'CHANGE_MEMBER_KEYS') {
-      const linkAuthorScope = { type: 'MEMBER', name: link.signed.userName } as KeyScope
-      //...
+      const author = link.signed.userName
+      if (!select.memberIsAdmin(prevState, author)) {
+        const target = link.body.payload.keys.name
+        if (author !== target) return fail(`Can't change another user's keys.`, ...args)
+      }
+    } else if (link.body.type === 'CHANGE_DEVICE_KEYS') {
+      const author = link.signed.userName
+      if (!select.memberIsAdmin(prevState, author)) {
+        const target = parseDeviceId(link.body.payload.keys.name).userName
+        if (author !== target) return fail(`Can't change another user's device keys.`, ...args)
+      }
     }
     return VALID
   },
