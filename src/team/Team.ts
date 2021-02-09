@@ -385,8 +385,8 @@ export class Team extends EventEmitter {
     seed = normalize(seed)
 
     const invitee: Invitee = deviceName
-      ? { type: KeyType.DEVICE, name: getDeviceId({ deviceName, userName }) }
-      : { type: KeyType.MEMBER, name: userName }
+      ? { type: DEVICE, name: getDeviceId({ deviceName, userName }) }
+      : { type: MEMBER, name: userName }
 
     const starterKeys = generateStarterKeys(invitee, seed)
 
@@ -604,7 +604,7 @@ export class Team extends EventEmitter {
   /** Replaces the current user or device's secret keyset with the one provided. */
   public changeKeys = (newKeyset: KeysetWithSecrets) => {
     switch (newKeyset.type) {
-      case KeyType.MEMBER: {
+      case MEMBER: {
         this.log(`change member keys ${keysetSummary(newKeyset)}`)
         assert(this.context.user)
         assert(newKeyset.name === this.userName, `Can't change another user's secret keys`)
@@ -625,28 +625,24 @@ export class Team extends EventEmitter {
 
         // update our keys in context
         this.context.user.keys = newKeyset
-
-        // TODO: After I update my own keys, I'll still be able to open lockboxes with the previous
-        // keys. Admins should check on every update for this situation - where I have newer keys
-        // than what the lockboxes were made for - and treat my previous generation of keys as
-        // compromised, and regenerate the keys I could see & make new lockboxes for everyone
-        // accordingly
-
-        break
+        return
       }
-      case KeyType.DEVICE: {
+      case DEVICE: {
         this.log(`change device keys ${keysetSummary(newKeyset)}`)
         assert(newKeyset.name === this.deviceId, `Can't change another device's secret keys`)
 
         const oldKeys = this.context.device.keys
         const generation = oldKeys.generation + 1
         const keys = { ...redactKeys(newKeyset), generation } as PublicKeyset
-        const lockboxes = this.generateNewLockboxes({ type: KeyType.DEVICE, name: newKeyset.name })
+        const lockboxes = this.generateNewLockboxes({ type: DEVICE, name: newKeyset.name })
 
         this.dispatch({
           type: 'CHANGE_DEVICE_KEYS',
           payload: { keys, lockboxes },
         })
+
+        // update device keys in context
+        this.context.device.keys = newKeyset
         return
       }
     }
