@@ -4,7 +4,7 @@ import { append, baseResolver, create, getSequence, Resolver, Sequencer, SignedL
 import { buildChain, findByPayload, getPayloads } from '/chain/testUtils'
 import { setup } from '/util/testing'
 
-const { alice } = setup(['alice'])
+const { alice } = setup('alice')
 const defaultContext = alice.localContext
 
 const randomSequencer: Sequencer = (a, b) => {
@@ -135,8 +135,8 @@ describe('chains', () => {
           const merged = a.concat(b).sort(alpha) as AnyLink[]
 
           const isI = (n: AnyLink) => n.body.payload === 'i'
-          const Is = merged.filter((n) => isI(n))
-          const notIs = merged.filter((n) => !isI(n))
+          const Is = merged.filter(n => isI(n))
+          const notIs = merged.filter(n => !isI(n))
 
           return Is.concat(notIs)
         }

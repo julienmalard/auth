@@ -12,7 +12,7 @@ describe('Team', () => {
   describe('invitations', () => {
     describe('members', () => {
       it('accepts valid proof of invitation', () => {
-        const { alice } = setup(['alice'])
+        const { alice } = setup('alice')
 
         // 👩🏾 Alice invites 👨🏻‍🦲 Bob by sending him a random secret key
         const { seed } = alice.team.invite({ userName: 'bob' })
@@ -28,7 +28,7 @@ describe('Team', () => {
       })
 
       it('lets you use a key of your choosing', () => {
-        const { alice } = setup(['alice'])
+        const { alice } = setup('alice')
 
         // 👩🏾 Alice invites 👨🏻‍🦲 Bob by sending him a secret key of her choosing
         const seed = 'passw0rd'
@@ -42,7 +42,7 @@ describe('Team', () => {
       })
 
       it('normalizes the secret key', () => {
-        const { alice } = setup(['alice'])
+        const { alice } = setup('alice')
 
         // 👩🏾 Alice invites 👨🏻‍🦲 Bob
         const seed = 'abc def ghi'
@@ -57,7 +57,7 @@ describe('Team', () => {
       })
 
       it('supports including roles in the invitation', () => {
-        const { alice } = setup(['alice'])
+        const { alice } = setup('alice')
 
         // 👩🏾 Alice invites 👨🏻‍🦲 Bob as admin
         const { seed } = alice.team.invite({ userName: 'bob', roles: [ADMIN] })
@@ -71,7 +71,7 @@ describe('Team', () => {
       })
 
       it('rejects invitation if name is altered', () => {
-        const { alice } = setup(['alice'])
+        const { alice } = setup('alice')
 
         // 👩🏾 Alice invites 👨🏻‍🦲 Bob
         const { seed } = alice.team.invite({ userName: 'bob' })
@@ -93,7 +93,7 @@ describe('Team', () => {
       })
 
       it('allows non-admins to accept an invitation', () => {
-        let { alice, bob } = setup(['alice', { user: 'bob', admin: false }])
+        let { alice, bob } = setup('alice', { user: 'bob', admin: false })
 
         // 👩🏾 Alice invites 👳🏽‍♂️ Charlie by sending him a secret key
         const { seed } = alice.team.invite({ userName: 'charlie' })
@@ -121,7 +121,7 @@ describe('Team', () => {
       })
 
       it('allows revoking an invitation', () => {
-        let { alice, bob } = setup(['alice', 'bob'])
+        let { alice, bob } = setup('alice', 'bob')
 
         // 👩🏾 Alice invites 👳🏽‍♂️ Charlie by sending him a secret key
         const { seed, id } = alice.team.invite({ userName: 'charlie' })
@@ -153,7 +153,7 @@ describe('Team', () => {
 
     describe('devices', () => {
       it('creates and accepts an invitation for a device', () => {
-        const { alice } = setup(['alice'])
+        const { alice } = setup('alice')
 
         const deviceName = 'alicez phone'
 

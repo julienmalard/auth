@@ -11,22 +11,22 @@ const managers = { roleName: MANAGERS }
 describe('Team', () => {
   describe('roles', () => {
     it('Alice is admin', () => {
-      const { alice } = setup(['alice'])
+      const { alice } = setup('alice')
       expect(alice.team.memberIsAdmin('alice')).toBe(true)
     })
 
     it('Bob is not admin', () => {
-      const { alice } = setup(['alice', { user: 'bob', admin: false }])
+      const { alice } = setup('alice', { user: 'bob', admin: false })
       expect(alice.team.memberIsAdmin('bob')).toBe(false)
     })
 
     it('Bob is admin', () => {
-      const { alice } = setup(['alice', { user: 'bob', admin: true }])
+      const { alice } = setup('alice', { user: 'bob', admin: true })
       expect(alice.team.memberIsAdmin('bob')).toBe(true)
     })
 
     it('adds a role', () => {
-      const { alice } = setup(['alice', 'bob'])
+      const { alice } = setup('alice', 'bob')
 
       // we only have default roles to start out
       expect(alice.team.roles().map(r => r.roleName)).toEqual([ADMIN])
@@ -45,7 +45,7 @@ describe('Team', () => {
     })
 
     it('admins have access to all role keys', () => {
-      const { alice } = setup(['alice'])
+      const { alice } = setup('alice')
 
       // 👩🏾 Alice adds the managers role
       alice.team.addRole(managers)
@@ -59,7 +59,7 @@ describe('Team', () => {
     })
 
     it('adds a member to a role', () => {
-      const { alice, bob } = setup(['alice', { user: 'bob', admin: false }])
+      const { alice, bob } = setup('alice', { user: 'bob', admin: false })
 
       // 👨🏻‍🦲 Bob isn't an admin yet
       expect(alice.team.memberIsAdmin('bob')).toBe(false)
@@ -82,7 +82,7 @@ describe('Team', () => {
     })
 
     it('removes a member from a role', () => {
-      const { alice, bob } = setup(['alice', 'bob'])
+      const { alice, bob } = setup('alice', 'bob')
 
       // Alice creates manager role and add 👨🏻‍🦲 Bob to it
       alice.team.addRole(managers)
@@ -113,7 +113,7 @@ describe('Team', () => {
     })
 
     it('removes a role', () => {
-      const { alice } = setup(['alice'])
+      const { alice } = setup('alice')
 
       // 👩🏾 Alice adds the managers role
       alice.team.addRole(managers)
@@ -126,7 +126,7 @@ describe('Team', () => {
     })
 
     it(`won't remove the admin role`, () => {
-      const { alice } = setup(['alice'])
+      const { alice } = setup('alice')
 
       // 👩🏾 Alice tries to remove the admin role
       const attemptToRemoveAdminRole = () => alice.team.removeRole(ADMIN)
@@ -136,19 +136,19 @@ describe('Team', () => {
     })
 
     it('gets an individual role', () => {
-      const { alice } = setup(['alice'])
+      const { alice } = setup('alice')
       const adminRole = alice.team.roles(ADMIN)
       expect(adminRole.roleName).toBe(ADMIN)
     })
 
     it('throws if asked to get a nonexistent role', () => {
-      const { alice } = setup(['alice'])
+      const { alice } = setup('alice')
       const getNonexistentRole = () => alice.team.roles('spatula')
       expect(getNonexistentRole).toThrow(/not found/)
     })
 
     it('lists all roles', () => {
-      const { alice } = setup(['alice'])
+      const { alice } = setup('alice')
       alice.team.addRole(managers)
       const roles = alice.team.roles()
       expect(roles).toHaveLength(2)
@@ -156,7 +156,7 @@ describe('Team', () => {
     })
 
     it('lists all members in a role ', () => {
-      const { alice } = setup(['alice', { user: 'bob', admin: true }])
+      const { alice } = setup('alice', { user: 'bob', admin: true })
 
       // 👩🏾 Alice and 👨🏻‍🦲 Bob are members
       expect(alice.team.membersInRole(ADMIN).map(m => m.userName)).toEqual(['alice', 'bob'])

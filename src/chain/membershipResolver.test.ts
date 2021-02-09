@@ -221,7 +221,7 @@ const sequence = (chain: TeamSignatureChain) =>
     .replace(/_MEMBER/g, '')
     .replace(/_ROLE/g, '')
 
-const { alice, bob, charlie } = userSetup(['alice', 'bob', 'charlie'])
+const { alice, bob, charlie } = userSetup('alice', 'bob', 'charlie')
 
 // constant actions
 

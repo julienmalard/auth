@@ -5,14 +5,14 @@ import { merge } from '/chain/merge'
 import { Link, isMergeLink, LinkBody, SignatureChain, Action, ActionLink } from '/chain/types'
 import { setup } from '/util/testing'
 
-const { alice } = setup(['alice'])
+const { alice } = setup('alice')
 
 export const getPayloads = (sequence: Link<any>[]) =>
-  sequence.filter((n) => !isMergeLink(n)).map((n) => (n.body as LinkBody<Action>).payload)
+  sequence.filter(n => !isMergeLink(n)).map(n => (n.body as LinkBody<Action>).payload)
 
 export const findByPayload = (chain: SignatureChain<Action>, payload: Action['payload']) => {
   const links = Object.values(chain.links)
-  return links.find((n) => !isMergeLink(n) && n.body.payload === payload) as ActionLink<Action>
+  return links.find(n => !isMergeLink(n) && n.body.payload === payload) as ActionLink<Action>
 }
 
 /**

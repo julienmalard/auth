@@ -8,7 +8,7 @@ const { MEMBER } = keysets.KeyType
 describe('Team', () => {
   describe('keys', () => {
     it('Alice has admin keys and team keys', () => {
-      const { alice } = setup(['alice'])
+      const { alice } = setup('alice')
       const adminKeys = alice.team.roleKeys(ADMIN)
       expect(adminKeys).toLookLikeKeyset()
 
@@ -17,7 +17,7 @@ describe('Team', () => {
     })
 
     it('Bob has team keys', () => {
-      const { bob } = setup(['alice', 'bob'])
+      const { bob } = setup('alice', 'bob')
 
       // Bob has team keys
       const teamKeys = bob.team.teamKeys()
@@ -25,7 +25,7 @@ describe('Team', () => {
     })
 
     it(`if Bob isn't admin he doesn't have admin keys`, () => {
-      const { bob } = setup(['alice', { user: 'bob', admin: false }])
+      const { bob } = setup('alice', { user: 'bob', admin: false })
 
       // Bob is not an admin so he doesn't have admin keys
       const bobLooksForAdminKeys = () => bob.team.roleKeys(ADMIN)
@@ -33,7 +33,7 @@ describe('Team', () => {
     })
 
     it('if Bob is an admin he has admin keys', () => {
-      const { bob } = setup(['alice', { user: 'bob', admin: true }])
+      const { bob } = setup('alice', { user: 'bob', admin: true })
 
       // Bob is an admin so he does have admin keys
       const adminKeys = bob.team.roleKeys(ADMIN)
@@ -41,7 +41,7 @@ describe('Team', () => {
     })
 
     it('after changing his keys, Bob still has team keys', () => {
-      const { bob } = setup(['alice', 'bob'])
+      const { bob } = setup('alice', 'bob')
 
       // Bob has team keys
       const teamKeys = bob.team.teamKeys()
@@ -56,6 +56,21 @@ describe('Team', () => {
       const teamKeys2 = bob.team.teamKeys()
       expect(teamKeys2).toLookLikeKeyset()
       expect(teamKeys2.generation).toBe(1) // the team keys were rotated, so these are new
+    })
+
+    it(`Bob can't change Alice's keys`, () => {
+      const { bob } = setup('alice', 'bob')
+
+      const newKeys = keysets.create({ type: MEMBER, name: 'alice' })
+      const tryToChangeAlicesKeys = () => bob.team.changeKeys(newKeys)
+
+      expect(tryToChangeAlicesKeys).toThrow()
+    })
+
+    it(`Eve can't change Bob's keys`, () => {
+      // Eve is tricker than Bob -- rather than try to go through the team object, she's going to
+      // try to tamper with the team chain directly.
+      const { bob, eve } = setup('alice', 'bob', 'eve')
     })
   })
 })

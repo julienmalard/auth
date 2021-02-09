@@ -24,7 +24,7 @@ beforeAll(() => {})
 
 describe('connection', () => {
   it('connects two members', async () => {
-    const { alice, bob } = setup(['alice', 'bob'])
+    const { alice, bob } = setup('alice', 'bob')
 
     // 👩🏾 👨🏻‍🦲 Alice and Bob both join the channel
     await connect(alice, bob)
@@ -34,7 +34,7 @@ describe('connection', () => {
   })
 
   it(`doesn't connect with a member who has been removed`, async () => {
-    const { alice, bob } = setup(['alice', 'bob'])
+    const { alice, bob } = setup('alice', 'bob')
 
     // 👩🏾 Alice removes Bob
     alice.team.remove('bob')
@@ -45,7 +45,7 @@ describe('connection', () => {
   })
 
   it(`doesn't connect with someone who doesn't belong to the team`, async () => {
-    const { alice, charlie } = setup(['alice', 'bob', { user: 'charlie', member: false }])
+    const { alice, charlie } = setup('alice', 'bob', { user: 'charlie', member: false })
 
     // ❌ Alice and Charlie can't connect because Charlie was never on the team
     tryToConnect(alice, charlie)
@@ -53,7 +53,7 @@ describe('connection', () => {
   })
 
   it.skip(`can reconnect after disconnecting`, async () => {
-    const { alice, bob } = setup(['alice', 'bob'])
+    const { alice, bob } = setup('alice', 'bob')
     // 👩🏾<->👨🏻‍🦲 Alice and Bob connect
     await connect(alice, bob)
 
@@ -69,7 +69,7 @@ describe('connection', () => {
   })
 
   it('updates remote user after connecting', async () => {
-    const { alice, bob } = setup(['alice', 'bob'])
+    const { alice, bob } = setup('alice', 'bob')
 
     // at this point, Alice and Bob have the same signature chain
 
@@ -92,7 +92,7 @@ describe('connection', () => {
   })
 
   it('updates local user after connecting', async () => {
-    const { alice, bob } = setup(['alice', 'bob'])
+    const { alice, bob } = setup('alice', 'bob')
 
     // at this point, Alice and Bob have the same signature chain
 
@@ -111,7 +111,7 @@ describe('connection', () => {
   })
 
   it('updates local user while connected', async () => {
-    const { alice, bob } = setup(['alice', 'bob'])
+    const { alice, bob } = setup('alice', 'bob')
 
     // 👩🏾 👨🏻‍🦲 Alice and Bob connect
     await connect(alice, bob)
@@ -130,7 +130,7 @@ describe('connection', () => {
   })
 
   it('resolves concurrent non-conflicting changes when updating', async () => {
-    const { alice, bob } = setup(['alice', 'bob'])
+    const { alice, bob } = setup('alice', 'bob')
 
     // 👩🏾 Alice creates a new role
     expect(alice.team.hasRole('MANAGERS')).toBe(false)
@@ -158,7 +158,7 @@ describe('connection', () => {
   })
 
   it('resolves concurrent duplicate changes when updating', async () => {
-    const { alice, bob } = setup(['alice', 'bob'])
+    const { alice, bob } = setup('alice', 'bob')
 
     // 👩🏾 Alice creates a new role
     alice.team.addRole('MANAGERS')
@@ -177,7 +177,7 @@ describe('connection', () => {
   })
 
   it('resolves concurrent duplicate removals', async () => {
-    const { alice, bob } = setup(['alice', 'bob', 'charlie'])
+    const { alice, bob } = setup('alice', 'bob', 'charlie')
 
     // 👳🏽‍♂️ Charlie is a member
     expect(alice.team.has('charlie')).toBe(true)
@@ -198,7 +198,7 @@ describe('connection', () => {
   })
 
   it('lets a member remove the founder', async () => {
-    const { alice, bob } = setup(['alice', 'bob'])
+    const { alice, bob } = setup('alice', 'bob')
 
     // 👩🏾<->👨🏻‍🦲 Alice and Bob connect
     await connect(alice, bob)
@@ -215,7 +215,7 @@ describe('connection', () => {
   })
 
   it('connects an invitee with a member', async () => {
-    const { alice, bob } = setup(['alice', { user: 'bob', member: false }])
+    const { alice, bob } = setup('alice', { user: 'bob', member: false })
 
     // 👩🏾📧👨🏻‍🦲 Alice invites Bob
     const { seed } = alice.team.invite({ userName: 'bob' })
@@ -228,7 +228,7 @@ describe('connection', () => {
   })
 
   it('after being admitted, invitee has team keys', async () => {
-    const { alice, bob } = setup(['alice', { user: 'bob', member: false }])
+    const { alice, bob } = setup('alice', { user: 'bob', member: false })
 
     // 👩🏾📧👨🏻‍🦲 Alice invites Bob
     const { seed } = alice.team.invite({ userName: 'bob' })
@@ -275,7 +275,7 @@ describe('connection', () => {
   })
 
   it('eventually updates disconnected members when someone uses an invitation to join', async () => {
-    const { alice, bob, charlie } = setup(['alice', 'bob', { user: 'charlie', member: false }])
+    const { alice, bob, charlie } = setup('alice', 'bob', { user: 'charlie', member: false })
 
     // 👩🏾📧👳🏽‍♂️ Alice invites Charlie
     const { seed } = alice.team.invite({ userName: 'charlie' })
@@ -291,7 +291,7 @@ describe('connection', () => {
   })
 
   it('updates connected members when someone uses an invitation to join', async () => {
-    const { alice, bob, charlie } = setup(['alice', 'bob', { user: 'charlie', member: false }])
+    const { alice, bob, charlie } = setup('alice', 'bob', { user: 'charlie', member: false })
 
     // 👩🏾<->👨🏻‍🦲 Alice and Bob connect
     await connect(alice, bob)
@@ -340,7 +340,7 @@ describe('connection', () => {
   })
 
   it(`handles concurrent admittance of the same invitation`, async () => {
-    const { alice, bob, charlie } = setup(['alice', 'bob', { user: 'charlie', member: false }])
+    const { alice, bob, charlie } = setup('alice', 'bob', { user: 'charlie', member: false })
 
     // 👩🏾📧👳🏽‍♂️👴 Alice invites Charlie
     const { seed } = alice.team.invite({ userName: 'charlie' })
@@ -365,7 +365,7 @@ describe('connection', () => {
   })
 
   it('resolves mutual demotions in favor of the senior member', async () => {
-    const { alice, bob } = setup(['alice', 'bob'])
+    const { alice, bob } = setup('alice', 'bob')
 
     // 👨🏻‍🦲 Bob removes 👩🏾 Alice from admin role
     bob.team.removeMemberRole('alice', ADMIN)
@@ -391,7 +391,7 @@ describe('connection', () => {
   })
 
   it('resolves mutual removals in favor of the senior member', async () => {
-    const { alice, bob, charlie, dwight } = setup(['alice', 'bob', 'charlie', 'dwight'])
+    const { alice, bob, charlie, dwight } = setup('alice', 'bob', 'charlie', 'dwight')
 
     // 👨🏻‍🦲 Bob removes 👩🏾 Alice
     bob.team.remove('alice')
@@ -431,7 +431,7 @@ describe('connection', () => {
   })
 
   it(`when a member is demoted and makes concurrent changes, discards those changes`, async () => {
-    const { alice, bob } = setup(['alice', 'bob', { user: 'charlie', admin: false }])
+    const { alice, bob } = setup('alice', 'bob', { user: 'charlie', admin: false })
 
     // 👩🏾 Alice removes 👨🏻‍🦲 Bob from admin role
     alice.team.removeMemberRole('bob', ADMIN)
@@ -449,7 +449,7 @@ describe('connection', () => {
   })
 
   it('lets a member use an invitation to add a device', async () => {
-    const { alice, bob } = setup(['alice', 'bob'])
+    const { alice, bob } = setup('alice', 'bob')
 
     // 👨🏻‍🦲💻📧->📱 on his laptop, Bob creates an invitation and gets it to his phone
     const { deviceName } = bob.phone
@@ -470,7 +470,7 @@ describe('connection', () => {
   })
 
   it(`when a member is demoted and concurrently adds a device, the new device is kept`, async () => {
-    const { alice, bob } = setup(['alice', 'bob'])
+    const { alice, bob } = setup('alice', 'bob')
 
     // 👩🏾 Alice removes 👨🏻‍🦲 Bob from admin role
     alice.team.removeMemberRole('bob', ADMIN)
@@ -500,7 +500,7 @@ describe('connection', () => {
   })
 
   it('sends updates across multiple hops', async () => {
-    const { alice, bob, charlie } = setup(['alice', 'bob', 'charlie'])
+    const { alice, bob, charlie } = setup('alice', 'bob', 'charlie')
 
     // 👩🏾<->👨🏻‍🦲 Alice and Bob connect
     await connect(alice, bob)
@@ -515,7 +515,7 @@ describe('connection', () => {
   })
 
   it('handles three-way connections', async () => {
-    const { alice, bob, charlie } = setup(['alice', 'bob', 'charlie'])
+    const { alice, bob, charlie } = setup('alice', 'bob', 'charlie')
 
     // 👩🏾<->👨🏻‍🦲<->👳🏽‍♂️ Alice, Bob, and Charlie all connect to each other
     await connect(alice, bob)
@@ -543,7 +543,7 @@ describe('connection', () => {
   })
 
   it('resolves concurrent non-conflicting changes in three-way connections', async () => {
-    const { alice, bob, charlie } = setup(['alice', 'bob', 'charlie'])
+    const { alice, bob, charlie } = setup('alice', 'bob', 'charlie')
 
     // 🔌 while disconnected...
 
@@ -571,7 +571,7 @@ describe('connection', () => {
   })
 
   it('resolves concurrent duplicate changes in three-way connections', async () => {
-    const { alice, bob, charlie } = setup(['alice', 'bob', 'charlie'])
+    const { alice, bob, charlie } = setup('alice', 'bob', 'charlie')
 
     // 🔌 while disconnected...
 
@@ -596,7 +596,7 @@ describe('connection', () => {
   })
 
   it('resolves circular concurrent demotions ', async () => {
-    const { alice, bob, charlie, dwight } = setup(['alice', 'bob', 'charlie', 'dwight'])
+    const { alice, bob, charlie, dwight } = setup('alice', 'bob', 'charlie', 'dwight')
 
     // Bob demotes Charlie
     bob.team.removeMemberRole('charlie', ADMIN)
@@ -625,7 +625,7 @@ describe('connection', () => {
   })
 
   it('connects an invitee while simultaneously making other changes', async () => {
-    const { alice, bob } = setup(['alice', { user: 'bob', member: false }])
+    const { alice, bob } = setup('alice', { user: 'bob', member: false })
 
     // 👩🏾📧👨🏻‍🦲 Alice invites Bob
     const { seed } = alice.team.invite({ userName: 'bob' })
@@ -647,7 +647,7 @@ describe('connection', () => {
   })
 
   it.skip('connects an invitee after one failed attempt', async () => {
-    const { alice, bob } = setup(['alice', { user: 'bob', member: false }])
+    const { alice, bob } = setup('alice', { user: 'bob', member: false })
 
     // 👩🏾📧👨🏻‍🦲 Alice invites Bob
     const seed = 'passw0rd'
@@ -683,7 +683,7 @@ describe('connection', () => {
   })
 
   it('rotates keys after a member is removed', async () => {
-    const { alice, bob } = setup(['alice', 'bob'])
+    const { alice, bob } = setup('alice', 'bob')
     await connect(alice, bob)
 
     // 👨🏻‍🦲 Bob has admin keys
@@ -705,7 +705,7 @@ describe('connection', () => {
   })
 
   it(`Eve steals Bob's phone; Bob heals the team`, async () => {
-    const { alice, bob, charlie } = setup(['alice', 'bob', 'charlie'])
+    const { alice, bob, charlie } = setup('alice', 'bob', 'charlie')
     await connect(alice, bob)
     await connect(bob, charlie)
 
@@ -749,7 +749,7 @@ describe('connection', () => {
   })
 
   it(`Eve steals Bob's laptop; Alice heals the team`, async () => {
-    const { alice, bob, charlie } = setup(['alice', 'bob', 'charlie'])
+    const { alice, bob, charlie } = setup('alice', 'bob', 'charlie')
     await connect(alice, bob)
     await connect(alice, charlie)
 

@@ -150,7 +150,7 @@ describe('chains', () => {
         .replace(/_ROLE/g, '')
   })
 
-  const { alice, bob, charlie } = userSetup(['alice', 'bob', 'charlie'])
+  const { alice, bob, charlie } = userSetup('alice', 'bob', 'charlie')
 
   // constant actions
 

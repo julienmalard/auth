@@ -5,7 +5,7 @@ describe('Team', () => {
   describe('crypto', () => {
     describe('encryption', () => {
       it('encrypts content for the team', () => {
-        const { alice, bob } = setup(['alice', 'bob'])
+        const { alice, bob } = setup('alice', 'bob')
 
         // 👩🏾 Alice encrypts a message for the whole team
         const message = 'I need someone to take care of that thing'
@@ -38,7 +38,7 @@ describe('Team', () => {
 
     describe('signatures', () => {
       it('validates a signed message', () => {
-        const { alice, bob } = setup(['alice', { user: 'bob', admin: true }])
+        const { alice, bob } = setup('alice', { user: 'bob', admin: true })
 
         // 👨🏻‍🦲 Bob signs a message
         const message = 'That thing, I took care of it, boss'

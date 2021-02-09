@@ -5,7 +5,7 @@ import { setup } from '/util/testing'
 
 import '/util/testing/expect/toBeValid'
 
-const { bob, eve } = setup(['alice', 'bob', 'eve'])
+const { bob, eve } = setup('alice', 'bob', 'eve')
 
 const { MEMBER } = KeyType
 

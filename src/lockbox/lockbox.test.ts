@@ -5,7 +5,7 @@ import { ADMIN } from '/role'
 
 import { setup } from '/util/testing'
 
-const { bob, eve } = setup(['alice', 'bob', { user: 'eve', member: false }])
+const { bob, eve } = setup('alice', 'bob', { user: 'eve', member: false })
 const MANAGERS = 'managers'
 
 describe('lockbox', () => {

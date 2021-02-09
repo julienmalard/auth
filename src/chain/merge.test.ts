@@ -3,7 +3,7 @@ import { clone } from '/util'
 import { setup } from '/util/testing'
 import '/util/testing/expect/toBeValid'
 
-const { alice, bob } = setup(['alice', 'bob'])
+const { alice, bob } = setup('alice', 'bob')
 const defaultContext = alice.localContext
 const __ = expect.objectContaining
 

@@ -7,7 +7,7 @@ import '/util/testing/expect/toBeValid'
 
 const __ = expect.objectContaining
 
-const { alice } = setup(['alice'])
+const { alice } = setup('alice')
 
 describe('chains', () => {
   describe('validation', () => {
