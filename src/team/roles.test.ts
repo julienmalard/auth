@@ -1,6 +1,7 @@
 import { symmetric } from '@herbcaudill/crypto'
 import { ADMIN } from '/role'
 import * as teams from '/team'
+import { profile } from '/util/profile'
 import { setup } from '/util/testing'
 import '/util/testing/expect/toLookLikeKeyset'
 
@@ -28,19 +29,19 @@ describe('Team', () => {
       const { alice } = setup(['alice', 'bob'])
 
       // we only have default roles to start out
-      expect(alice.team.roles().map((r) => r.roleName)).toEqual([ADMIN])
+      expect(alice.team.roles().map(r => r.roleName)).toEqual([ADMIN])
       expect(alice.team.hasRole(ADMIN)).toBe(true)
       expect(alice.team.hasRole(MANAGERS)).toBe(false)
 
       // 👩🏾 Alice adds the managers role
       alice.team.addRole(managers)
-      expect(alice.team.roles().map((r) => r.roleName)).toEqual([ADMIN, MANAGERS])
+      expect(alice.team.roles().map(r => r.roleName)).toEqual([ADMIN, MANAGERS])
       expect(alice.team.roles(MANAGERS).roleName).toBe(MANAGERS)
       expect(alice.team.hasRole(MANAGERS)).toBe(true)
 
       // 👩🏾 Alice adds 👨🏻‍🦲 Bob to the managers role
       alice.team.addMemberRole('bob', MANAGERS)
-      expect(alice.team.membersInRole(MANAGERS).map((m) => m.userName)).toEqual(['bob'])
+      expect(alice.team.membersInRole(MANAGERS).map(m => m.userName)).toEqual(['bob'])
     })
 
     it('admins have access to all role keys', () => {
@@ -116,7 +117,7 @@ describe('Team', () => {
 
       // 👩🏾 Alice adds the managers role
       alice.team.addRole(managers)
-      expect(alice.team.roles().map((r) => r.roleName)).toEqual([ADMIN, MANAGERS])
+      expect(alice.team.roles().map(r => r.roleName)).toEqual([ADMIN, MANAGERS])
       expect(alice.team.roles(MANAGERS).roleName).toBe(MANAGERS)
 
       // 👩🏾 Alice removes the managers role
@@ -151,15 +152,15 @@ describe('Team', () => {
       alice.team.addRole(managers)
       const roles = alice.team.roles()
       expect(roles).toHaveLength(2)
-      expect(roles.map((role) => role.roleName)).toEqual([ADMIN, MANAGERS])
+      expect(roles.map(role => role.roleName)).toEqual([ADMIN, MANAGERS])
     })
 
     it('lists all members in a role ', () => {
       const { alice } = setup(['alice', { user: 'bob', admin: true }])
 
       // 👩🏾 Alice and 👨🏻‍🦲 Bob are members
-      expect(alice.team.membersInRole(ADMIN).map((m) => m.userName)).toEqual(['alice', 'bob'])
-      expect(alice.team.admins().map((m) => m.userName)).toEqual(['alice', 'bob'])
+      expect(alice.team.membersInRole(ADMIN).map(m => m.userName)).toEqual(['alice', 'bob'])
+      expect(alice.team.admins().map(m => m.userName)).toEqual(['alice', 'bob'])
     })
 
     it('allows an admin other than Alice to add a member', () => {
@@ -207,75 +208,78 @@ describe('Team', () => {
       expect(remove).toThrow(/not an admin/)
     })
 
-    it('rotates keys when a member is removed from a role', () => {
-      const COOLKIDS = 'coolkids'
+    it('rotates keys when a member is removed from a role', async () => {
+      const roles_test_rotate = () => {
+        const COOLKIDS = 'coolkids'
 
-      const { alice, bob, charlie } = setup([
-        'alice',
-        { user: 'bob', admin: false },
-        { user: 'charlie', admin: false },
-      ])
+        const { alice, bob, charlie } = setup([
+          'alice',
+          { user: 'bob', admin: false },
+          { user: 'charlie', admin: false },
+        ])
 
-      alice.team.addRole(COOLKIDS)
-      alice.team.addMemberRole('bob', COOLKIDS)
-      alice.team.addMemberRole('charlie', COOLKIDS)
+        alice.team.addRole(COOLKIDS)
+        alice.team.addMemberRole('bob', COOLKIDS)
+        alice.team.addMemberRole('charlie', COOLKIDS)
 
-      const savedTeam = alice.team.save()
-      bob.team = teams.load(savedTeam, bob.localContext)
-      charlie.team = teams.load(savedTeam, charlie.localContext)
+        const savedTeam = alice.team.save()
+        bob.team = teams.load(savedTeam, bob.localContext)
+        charlie.team = teams.load(savedTeam, charlie.localContext)
 
-      // 👨🏻‍🦲 Bob is currently in the cool kids
-      expect(bob.team.memberHasRole('bob', COOLKIDS)).toBe(true)
+        // 👨🏻‍🦲 Bob is currently in the cool kids
+        expect(bob.team.memberHasRole('bob', COOLKIDS)).toBe(true)
 
-      // The cool kids keys have never been rotated
-      expect(alice.team.roleKeys(COOLKIDS).generation).toBe(0)
+        // The cool kids keys have never been rotated
+        expect(alice.team.roleKeys(COOLKIDS).generation).toBe(0)
 
-      // 👩🏾 Alice encrypts something for the cool kids
-      const message = `exclusive party at Alice's house tonight. cool kids only!!!`
-      const encryptedMessage = alice.team.encrypt(message, COOLKIDS)
+        // 👩🏾 Alice encrypts something for the cool kids
+        const message = `exclusive party at Alice's house tonight. cool kids only!!!`
+        const encryptedMessage = alice.team.encrypt(message, COOLKIDS)
 
-      // 👨🏻‍🦲 Bob and Charlie can both read the message
-      expect(bob.team.decrypt(encryptedMessage)).toEqual(message)
-      expect(charlie.team.decrypt(encryptedMessage)).toEqual(message)
+        // 👨🏻‍🦲 Bob and Charlie can both read the message
+        expect(bob.team.decrypt(encryptedMessage)).toEqual(message)
+        expect(charlie.team.decrypt(encryptedMessage)).toEqual(message)
 
-      // Now, 👨🏻‍🦲 Bob suspects no one likes him so he makes a copy of his keys
-      const copyOfKeysInCaseTheyKickMeOut = bob.team.roleKeys(COOLKIDS)
+        // Now, 👨🏻‍🦲 Bob suspects no one likes him so he makes a copy of his keys
+        const copyOfKeysInCaseTheyKickMeOut = bob.team.roleKeys(COOLKIDS)
 
-      // Sure enough, 👩🏾 Alice remembers that she can't stand 👨🏻‍🦲 Bob so she kicks him out
-      alice.team.removeMemberRole('bob', COOLKIDS)
+        // Sure enough, 👩🏾 Alice remembers that she can't stand 👨🏻‍🦲 Bob so she kicks him out
+        alice.team.removeMemberRole('bob', COOLKIDS)
 
-      // Everyone gets the latest team state
-      const savedTeam2 = alice.team.save()
-      bob.team = teams.load(savedTeam2, bob.localContext)
-      charlie.team = teams.load(savedTeam2, charlie.localContext)
+        // Everyone gets the latest team state
+        const savedTeam2 = alice.team.save()
+        bob.team = teams.load(savedTeam2, bob.localContext)
+        charlie.team = teams.load(savedTeam2, charlie.localContext)
 
-      // 👳🏽‍♂️ Charlie can still read the message
-      expect(charlie.team.decrypt(encryptedMessage)).toEqual(message)
+        // 👳🏽‍♂️ Charlie can still read the message
+        expect(charlie.team.decrypt(encryptedMessage)).toEqual(message)
 
-      // 👨🏻‍🦲 Bob can no longer read the message through normal channels
-      expect(() => bob.team.decrypt(encryptedMessage)).toThrow()
+        // 👨🏻‍🦲 Bob can no longer read the message through normal channels
+        expect(() => bob.team.decrypt(encryptedMessage)).toThrow()
 
-      // But with a little effort...
-      const decryptUsingSavedKey = (message: teams.EncryptedEnvelope) => () =>
-        symmetric.decrypt(message.contents, copyOfKeysInCaseTheyKickMeOut.secretKey)
+        // But with a little effort...
+        const decryptUsingSavedKey = (message: teams.EncryptedEnvelope) => () =>
+          symmetric.decrypt(message.contents, copyOfKeysInCaseTheyKickMeOut.secretKey)
 
-      // 👨🏻‍🦲 Bob can still see the old message using his saved key, because it was encrypted before he
-      // was kicked out (can't undisclose what you've disclosed)
-      expect(decryptUsingSavedKey(encryptedMessage)).not.toThrow()
+        // 👨🏻‍🦲 Bob can still see the old message using his saved key, because it was encrypted before he
+        // was kicked out (can't undisclose what you've disclosed)
+        expect(decryptUsingSavedKey(encryptedMessage)).not.toThrow()
 
-      // However! the group's keys have been rotated
-      expect(alice.team.roleKeys(COOLKIDS).generation).toBe(1)
+        // However! the group's keys have been rotated
+        expect(alice.team.roleKeys(COOLKIDS).generation).toBe(1)
 
-      // So 👩🏾 Alice encrypts a new message for admins
-      const newMessage = `party moved to Charlie's place, don't tell Bob`
-      const newEncryptedMessage = alice.team.encrypt(newMessage, COOLKIDS)
+        // So 👩🏾 Alice encrypts a new message for admins
+        const newMessage = `party moved to Charlie's place, don't tell Bob`
+        const newEncryptedMessage = alice.team.encrypt(newMessage, COOLKIDS)
 
-      // 👳🏽‍♂️ Charlie can read the message
-      expect(charlie.team.decrypt(newEncryptedMessage)).toEqual(newMessage)
+        // 👳🏽‍♂️ Charlie can read the message
+        expect(charlie.team.decrypt(newEncryptedMessage)).toEqual(newMessage)
 
-      // 👨🏻‍🦲 Bob tries to read the new message with his old admin key, but he can't because it was
-      // encrypted with the new key
-      expect(decryptUsingSavedKey(newEncryptedMessage)).toThrow()
+        // 👨🏻‍🦲 Bob tries to read the new message with his old admin key, but he can't because it was
+        // encrypted with the new key
+        expect(decryptUsingSavedKey(newEncryptedMessage)).toThrow()
+      }
+      await profile(roles_test_rotate)
     })
   })
 })
