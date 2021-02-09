@@ -16,9 +16,9 @@ import { arrayToMap, assert } from '/util'
 Usage: 
 
 ```ts
-const {alice, bob} = setup('alice', 'bob')
-const {alice, bob, charlie} = setup('alice', 'bob', {name: 'charlie', member: false})
-const {alice, bob, charlie, dwight} = setup('alice', 'bob', 'charlie', {name: 'dwight', admin: false})
+const {alice, bob} = setup(['alice', 'bob'])
+const {alice, bob, charlie} = setup(['alice', 'bob', {name: 'charlie', member: false}])
+const {alice, bob, charlie, dwight} = setup(['alice', 'bob', 'charlie', {name: 'dwight', admin: false}])
 
 alice.team.add('bob')
 ```
@@ -28,7 +28,7 @@ export const setup = (
 ) => {
   assert(_config.length > 0)
 
-  // accept `setup('a', 'b')` or `setup('a','b')`
+  // accept `setup(['a', 'b'])` or `setup('a','b')`
   if (Array.isArray(_config[0])) _config = _config[0] as (TestUserSettings | string)[]
 
   // Coerce string userNames into TestUserSettings objects
