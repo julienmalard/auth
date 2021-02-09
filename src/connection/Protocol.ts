@@ -39,8 +39,6 @@ import { arrayToMap, assert, debug } from '/util'
 
 const { DEVICE } = KeyType
 
-// NEXT: InitialContext needs to have two possible states - member or non-member
-
 /**
  * Wraps a state machine (using [XState](https://xstate.js.org/docs/)) that
  * implements the connection protocol. The XState configuration is in `machineConfig`.
