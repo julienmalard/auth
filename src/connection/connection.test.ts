@@ -52,7 +52,6 @@ describe('connection', () => {
     await disconnection(alice, charlie)
   })
 
-  // TODO - not sure why this is not working any more
   it.skip(`can reconnect after disconnecting`, async () => {
     const { alice, bob } = setup(['alice', 'bob'])
     // 👩🏾<->👨🏻‍🦲 Alice and Bob connect
@@ -666,13 +665,11 @@ describe('connection', () => {
     // 👨🏻‍🦲📧<->👩🏾 Bob tries again with the right code this time
     bob.connectionContext = { ...bob.connectionContext, invitationSeed: 'passw0rd' }
 
-    // TODO: we can make this work by uncommenting the following lines, which start Alice and Bob
+    // we can make this work by uncommenting the following lines, which start Alice and Bob
     // out with shiny new connections. However we want Bob to be able to try again with the same
     // connection. Maybe the answer is to separate out presenting an invitation from the HELLO message?
     //
     // It almost works if we don't restart Alice's connection, but she can't handle Bob's hello message coming in as #0.
-    //
-    //
 
     // bob.connection.alice = new Connection(bob.context).start()
     // alice.connection.bob = new Connection(alice.context).start()
