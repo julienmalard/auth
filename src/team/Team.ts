@@ -40,7 +40,7 @@ import { getVisibleScopes } from '/team/selectors'
 import { EncryptedEnvelope, isNewTeam, SignedEnvelope, TeamOptions, TeamState } from '/team/types'
 import * as users from '/user'
 import { User } from '/user'
-import { assert, debug, Hash, Payload } from '/util'
+import { assert, debug, Hash, lockboxSummary, Payload } from '/util'
 
 const { DEVICE, ROLE, MEMBER } = KeyType
 
@@ -613,7 +613,6 @@ export class Team extends EventEmitter {
         )
 
         const oldKeys = this.context.user.keys
-
         newKeyset.generation = oldKeys.generation + 1
 
         // treat the old keys as compromised, and rotate any lockboxes they could open
@@ -640,9 +639,9 @@ export class Team extends EventEmitter {
         )
 
         const oldKeys = this.context.device.keys
-        const generation = oldKeys.generation + 1
-        const keys = { ...redactKeys(newKeyset), generation } as PublicKeyset
-        const lockboxes = this.generateNewLockboxes({ type: DEVICE, name: newKeyset.name })
+        newKeyset.generation = oldKeys.generation + 1
+        const keys = redactKeys(newKeyset) as PublicKeyset
+        const lockboxes = this.generateNewLockboxes(newKeyset)
 
         this.dispatch({
           type: 'CHANGE_DEVICE_KEYS',

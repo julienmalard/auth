@@ -7,6 +7,7 @@ import {
   addMemberRoles,
   addRole,
   changeMemberKeys,
+  changeDeviceKeys,
   collectLockboxes,
   compose,
   postInvitation,
@@ -152,7 +153,6 @@ const getTransforms = (action: TeamAction): Reducer[] => {
       ]
     }
 
-    // TODO: Can only change my own
     case 'CHANGE_MEMBER_KEYS': {
       const { keys } = action.payload
       return [
@@ -160,11 +160,10 @@ const getTransforms = (action: TeamAction): Reducer[] => {
       ]
     }
 
-    // TODO: Can only change my own
     case 'CHANGE_DEVICE_KEYS': {
       const { keys } = action.payload
       return [
-        // changeDeviceKeys(keys), // Replace this device's public keys with the ones provided
+        changeDeviceKeys(keys), // Replace this device's public keys with the ones provided
       ]
     }
 

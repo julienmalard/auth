@@ -22,7 +22,7 @@ const { DEVICE, MEMBER } = KeyType
 
 beforeAll(() => {})
 
-describe('connection', () => {
+describe.skip('connection', () => {
   it('connects two members', async () => {
     const { alice, bob } = setup('alice', 'bob')
 
