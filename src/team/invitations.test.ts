@@ -126,27 +126,28 @@ describe('Team', () => {
         // 👩🏾 Alice invites 👳🏽‍♂️ Charlie by sending him a secret key
         const { seed, id } = alice.team.invite({ userName: 'charlie' })
 
+        expect(alice.team.has('charlie')).toBe(true)
+
         // 👳🏽‍♂️ Charlie accepts the invitation
         const proofOfInvitation = generateProof(seed, 'charlie')
 
         // 👩🏾 Alice changes her mind and revokes the invitation
         alice.team.revokeInvitation(id)
-        alice.team.remove('charlie') // we now have to do this explicitly
 
-        // TODO: should revoking implicitly remove the member? See Team.ts:revokeInvitation
+        expect(alice.team.has('charlie')).toBe(false)
 
         // later, 👩🏾 Alice is no longer around, but 👨🏻‍🦲 Bob is online
         const persistedTeam = alice.team.save()
-        const bobsTeam = teams.load(persistedTeam, bob.localContext)
+        bob.team = teams.load(persistedTeam, bob.localContext)
 
         // 👳🏽‍♂️ Charlie shows 👨🏻‍🦲 Bob his proof of invitation
-        const tryToAdmitCharlie = () => bobsTeam.admit(proofOfInvitation)
+        const tryToAdmitCharlie = () => bob.team.admit(proofOfInvitation)
 
         // 👎 But the invitation is rejected
         expect(tryToAdmitCharlie).toThrowError(/revoked/)
 
         // ✅ 👳🏽‍♂️ Charlie is not on the team
-        expect(bobsTeam.has('charlie')).toBe(false)
+        expect(bob.team.has('charlie')).toBe(false)
       })
     })
 
