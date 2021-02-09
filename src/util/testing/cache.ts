@@ -1,4 +1,4 @@
-import memoize from 'fast-memoize'
+import { memoize } from '/util'
 import fs from 'fs'
 import path from 'path'
 

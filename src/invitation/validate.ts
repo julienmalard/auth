@@ -2,7 +2,7 @@
 import { Invitation, InvitationBody, ProofOfInvitation } from '/invitation/types'
 import { KeysetWithSecrets, scopesMatch } from '/keyset'
 import { VALID, ValidationResult } from '/util'
-import memoize from 'fast-memoize'
+import { memoize } from '/util'
 
 export const validate = memoize(
   (

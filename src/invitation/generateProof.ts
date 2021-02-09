@@ -1,5 +1,5 @@
 ﻿import { signatures } from '@herbcaudill/crypto'
-import memoize from 'fast-memoize'
+import { memoize } from '/util'
 import { generateStarterKeys } from './generateStarterKeys'
 import { normalize } from './normalize'
 import { deriveId } from '/invitation/deriveId'

@@ -33,11 +33,11 @@ import {
 } from '/connection/types'
 import { getDeviceId, parseDeviceId } from '/device'
 import * as invitations from '/invitation'
-import { create, KeyType, randomKey } from '/keyset'
+import { KeyType, randomKey } from '/keyset'
 import { Team } from '/team'
 import { arrayToMap, assert, debug } from '/util'
 
-const { DEVICE, MEMBER } = KeyType
+const { DEVICE } = KeyType
 
 // NEXT: InitialContext needs to have two possible states - member or non-member
 

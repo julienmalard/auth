@@ -1,5 +1,5 @@
 ﻿import { asymmetric } from '@herbcaudill/crypto'
-import memoize from 'fast-memoize'
+import { memoize } from '/util'
 import { KeysetWithSecrets } from '/keyset'
 import { Lockbox } from '/lockbox/types'
 

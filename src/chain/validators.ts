@@ -1,4 +1,4 @@
-﻿import memoize from 'fast-memoize'
+﻿import { memoize } from '/util'
 import { signatures } from '@herbcaudill/crypto'
 import { getRoot } from '/chain/getRoot'
 import { hashLink } from '/chain/hashLink'
@@ -8,6 +8,7 @@ import {
   NonRootLinkBody,
   ROOT,
   RootLinkBody,
+  Validator,
   ValidatorSet,
 } from '/chain/types'
 import { debug, ValidationError } from '/util'
@@ -59,7 +60,7 @@ const _validators: ValidatorSet = {
   },
 
   /** Does this link's signature check out? */
-  validateSignatures: (link) => {
+  validateSignatures: link => {
     if (isMergeLink(link)) return { isValid: true } // merge links aren't signed
 
     const signedMessage = {
@@ -75,16 +76,10 @@ const _validators: ValidatorSet = {
         }
   },
 }
-type Func = (...args: any[]) => any
-type FunctionMap = Record<string, Func>
-
-const memoizeFunctionMap = <T extends FunctionMap>(m: T): T => {
-  const result = {} as any
-  for (const key in m) {
-    const fn = m[key] as Func
-    result[key] = memoize(fn) as Func
-  }
-  return result as T
+const memoizeFunctionMap = (source: ValidatorSet) => {
+  const result = {} as ValidatorSet
+  for (const key in source) result[key] = memoize(source[key])
+  return result
 }
 
 export const validators = memoizeFunctionMap(_validators)

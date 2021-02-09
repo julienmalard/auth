@@ -1,4 +1,4 @@
-﻿import memoize from 'fast-memoize'
+﻿import { memoize } from '/util'
 import { DeviceWithSecrets, getDeviceId } from '/device'
 import { KeyMetadata, KeysetWithSecrets } from '/keyset'
 import { open } from '/lockbox'
@@ -53,7 +53,7 @@ const getKeyMap = (state: TeamState, currentDevice: DeviceWithSecrets): KeyMap =
   const deviceKeys = [currentDevice.keys] // if there's no history, just use the current keys
 
   // get all the keys those keys can access
-  const allVisibleKeys = deviceKeys.flatMap((keys) => getVisibleKeys(state, keys))
+  const allVisibleKeys = deviceKeys.flatMap(keys => getVisibleKeys(state, keys))
 
   // structure these keys as described above
   return allVisibleKeys.reduce(organizeKeysIntoMap, {})
@@ -72,10 +72,10 @@ const getVisibleKeys = (state: TeamState, keyset: KeysetWithSecrets): KeysetWith
   const lockboxesICanOpen = lockboxes.filter(({ recipient }) => recipient.publicKey === publicKey)
 
   // collect all the keys from those lockboxes
-  const keysets = lockboxesICanOpen.map((lockbox) => open(lockbox, keyset))
+  const keysets = lockboxesICanOpen.map(lockbox => open(lockbox, keyset))
 
   // recursively get all the keys *those* keys can access
-  const visibileKeys = keysets.flatMap((keyset) => getVisibleKeys(state, keyset))
+  const visibileKeys = keysets.flatMap(keyset => getVisibleKeys(state, keyset))
 
   return [...keysets, ...visibileKeys]
 }
