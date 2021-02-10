@@ -55,6 +55,9 @@ export type SignedLink<B extends LinkBody<A>, A extends Action> = {
     /** The username (or ID or email) of the person signing the link */
     userName: string
 
+    /** The name of the device in use when signing the link */
+    deviceName: string
+
     /** The public half of the key used to sign the link, in base64 encoding */
     key: Base64
   }
