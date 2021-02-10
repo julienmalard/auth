@@ -1,7 +1,7 @@
-﻿import { Reducer } from '/team/reducers/index'
+﻿import { parseDeviceId } from '/device'
 import { PublicKeyset } from '/keyset'
+import { Reducer } from '/team/reducers/index'
 import { debug } from '/util'
-import { parseDeviceId, PublicDevice } from '/device'
 
 const log = debug('lf:auth:reducer')
 
@@ -13,10 +13,14 @@ export const changeDeviceKeys = (keys: PublicKeyset): Reducer => state => {
       if (member.userName === userName) {
         return {
           ...member,
-          devices: member.devices?.map(device => ({
-            ...device,
-            keys, // 🡐 replace device keys
-          })),
+          devices: member.devices?.map(device => {
+            if (device.deviceName === deviceName)
+              return {
+                ...device,
+                keys, // 🡐 replace device keys
+              }
+            else return device
+          }),
         }
       } else return member
     }),
