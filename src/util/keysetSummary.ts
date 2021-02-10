@@ -4,5 +4,5 @@ export const keysetSummary = (keyset: PublicKeyset | KeysetWithSecrets | undefin
   if (keyset === undefined) return 'none'
   const scope = getScope(keyset)
   const publicKey = hasSecrets(keyset) ? keyset.encryption.publicKey : keyset.encryption
-  return `${scope.name}:${publicKey}`
+  return `${scope.name}:${publicKey}#${keyset.generation}`
 }
