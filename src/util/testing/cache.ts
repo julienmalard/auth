@@ -1,6 +1,6 @@
-import { memoize } from '/util'
 import fs from 'fs'
 import path from 'path'
+import { memoize } from '../memoize'
 
 // TEST ASSETS
 export const cache = <T>(fileName: string, generateAsset: () => T): T => {
@@ -22,6 +22,7 @@ const fileSystemSafe = (s: string) =>
     .replace(/^-/i, '')
     .replace(/-$/i, '')
     .toLowerCase()
-const parseCacheFile = memoize((fileName: string) =>
-  JSON.parse(fs.readFileSync(fileName).toString())
-)
+
+const readFile = memoize((fileName: string) => fs.readFileSync(fileName).toString())
+
+const parseCacheFile = (fileName: string) => JSON.parse(readFile(fileName))
