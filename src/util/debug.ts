@@ -10,7 +10,7 @@ const logFile = 'log.txt'
 const substituteTokens = (s: string) =>
   s
     .replace(isoDateRx, '') // eliminate dates
-    .replace(hashRx, (s) => s.slice(0, 5)) // truncate hashes
+    .replace(hashRx, s => s.slice(0, 5)) // truncate hashes
 
     .replace(/lf:auth:/g, '')
 
@@ -19,8 +19,10 @@ const substituteTokens = (s: string) =>
     .replace(/charlie/g, '👳🏽‍♂️')
     .replace(/dwight/g, '👴')
 
-    .replace(/:laptop/g, '')
-    .replace(/:phone/g, '📱')
+    .replace(/laptop/g, '💻')
+    .replace(/phone/g, '📱')
+
+    .replace(/"/g, '')
 
     .replace(/↩/g, EOL)
     .replace(/\\n/g, EOL)
