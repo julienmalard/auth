@@ -499,7 +499,6 @@ export class Team extends EventEmitter {
 
       // create new device keys for ourselves to replace the ephemeral ones from the invitation
       const deviceId = getDeviceId(this.context.device)
-      this.context.device.keys = keysets.create({ type: DEVICE, name: deviceId })
       this.changeKeys(this.context.device.keys)
     } else {
       // if we did already have a `user` defined, we're joining as a new user.
@@ -507,7 +506,6 @@ export class Team extends EventEmitter {
 
       // we need to create new user keys to replace the ephemeral ones from the invitation
       const { userName } = this.context.user
-      this.context.user.keys = keysets.create({ type: MEMBER, name: userName })
       this.changeKeys(this.context.user.keys)
 
       // we need to add our device to the signature chain, as well as a lockbox for that device containing our user keys
