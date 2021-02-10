@@ -6,5 +6,4 @@ export const initialState = {
   roles: [],
   lockboxes: [],
   invitations: {},
-  Invitations: {},
 }

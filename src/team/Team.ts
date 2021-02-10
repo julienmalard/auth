@@ -40,7 +40,7 @@ import { getVisibleScopes } from '/team/selectors'
 import { EncryptedEnvelope, isNewTeam, SignedEnvelope, TeamOptions, TeamState } from '/team/types'
 import * as users from '/user'
 import { User } from '/user'
-import { assert, debug, Hash, Payload } from '/util'
+import { assert, debug, Hash, lockboxSummary, Payload } from '/util'
 
 const { DEVICE, ROLE, MEMBER } = KeyType
 
@@ -306,13 +306,8 @@ export class Team extends EventEmitter {
    */
 
   /** Find a member's device by name */
-  public getDevice = (userName: string, deviceName: string): PublicDevice => {
-    const memberDevices = this.members(userName).devices || []
-    const device = memberDevices.find(d => d.deviceName === deviceName)
-    if (device === undefined)
-      throw new Error(`Member ${userName} does not have a device called ${deviceName}`)
-    return device
-  }
+  public device = (userName: string, deviceName: string): PublicDevice =>
+    select.device(this.state, userName, deviceName)
 
   /** Remove a member's device */
   public removeDevice = (userName: string, deviceName: string) => {
@@ -607,10 +602,12 @@ export class Team extends EventEmitter {
       case MEMBER: {
         this.log(`change member keys ${keysetSummary(newKeyset)}`)
         assert(this.context.user)
-        assert(newKeyset.name === this.userName, `Can't change another user's secret keys`)
+        assert(
+          newKeyset.name === this.userName || this.memberIsAdmin(this.userName),
+          `Can't change another user's secret keys`
+        )
 
         const oldKeys = this.context.user.keys
-
         newKeyset.generation = oldKeys.generation + 1
 
         // treat the old keys as compromised, and rotate any lockboxes they could open
@@ -629,12 +626,13 @@ export class Team extends EventEmitter {
       }
       case DEVICE: {
         this.log(`change device keys ${keysetSummary(newKeyset)}`)
+
         assert(newKeyset.name === this.deviceId, `Can't change another device's secret keys`)
 
         const oldKeys = this.context.device.keys
-        const generation = oldKeys.generation + 1
-        const keys = { ...redactKeys(newKeyset), generation } as PublicKeyset
-        const lockboxes = this.generateNewLockboxes({ type: DEVICE, name: newKeyset.name })
+        newKeyset.generation = oldKeys.generation + 1
+        const keys = redactKeys(newKeyset) as PublicKeyset
+        const lockboxes = this.generateNewLockboxes(newKeyset)
 
         this.dispatch({
           type: 'CHANGE_DEVICE_KEYS',

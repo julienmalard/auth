@@ -35,7 +35,7 @@ describe('Team', () => {
     it('can look up a device by name', () => {
       const { alice } = setup()
       const { deviceName } = alice.device
-      const aliceDevice = alice.team.getDevice('alice', deviceName)
+      const aliceDevice = alice.team.device('alice', deviceName)
       expect(aliceDevice).not.toBeUndefined()
       expect(aliceDevice.deviceName).toBe(deviceName)
     })

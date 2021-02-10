@@ -11,7 +11,7 @@ interface Memoize extends MemoizeFunc {
   }
 }
 
-export const memoize = _memoize as Memoize
+const BYPASS = false
+const passthrough = <T>(f: T) => f as T
 
-// const passthrough = <T>(f: T) => f as T
-// export const memoize = passthrough // for performance comparison
+export const memoize = (BYPASS ? passthrough : _memoize) as Memoize

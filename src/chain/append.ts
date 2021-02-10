@@ -17,19 +17,20 @@ export const append = <A extends Action>(
     prev: chain.head,
   } as NonRootLinkBody<A>
 
-  const { userName, keys } = context.user
+  const { userName, deviceName, keys } = context.device
   const hash = hashLink(body)
 
   // attach signature
-  const signedLink = {
+  const signedLink: SignedLink<NonRootLinkBody<A>, A> = {
     body,
     hash,
     signed: {
       userName,
+      deviceName,
       signature: signatures.sign(body, keys.signature.secretKey),
       key: keys.signature.publicKey,
     },
-  } as SignedLink<NonRootLinkBody<A>, A>
+  }
 
   // clone the previous map of links and add the new one
   const links = { ...chain.links, [hash]: signedLink }

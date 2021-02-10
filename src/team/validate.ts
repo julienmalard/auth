@@ -1,9 +1,9 @@
 ﻿import { isAdminOnlyAction } from '../chain/isAdminOnlyAction'
 import { ActionLink, ROOT } from '/chain'
-import { KeyScope } from '/keyset'
+import { parseDeviceId } from '/device'
 import * as select from '/team/selectors'
 import { TeamState, TeamStateValidator, TeamStateValidatorSet, ValidationArgs } from '/team/types'
-import { VALID, ValidationError } from '/util'
+import { truncateHashes, VALID, ValidationError } from '/util'
 
 export const validate: TeamStateValidator = (...args: ValidationArgs) => {
   for (const key in validators) {
@@ -15,25 +15,38 @@ export const validate: TeamStateValidator = (...args: ValidationArgs) => {
 }
 
 const validators: TeamStateValidatorSet = {
-  /** check that the user who made these changes was a member with appropriate rights at the time */
+  /** the user who made these changes was a member with appropriate rights at the time */
   mustBeAdmin: (...args) => {
     const [prevState, link] = args
     const action = link.body
     const { type, context } = action
+    const { userName } = context.member
 
     // at root link, team doesn't yet have members
-    if (type !== ROOT) {
-      const { userName } = context.member
+    if (type === ROOT) return VALID
 
-      // make sure member exists
-      const noSuchMember = !select.hasMember(prevState, userName)
-      if (noSuchMember) return fail(`A member named '${userName}' was not found`, ...args)
+    if (isAdminOnlyAction(action)) {
+      const isntAdmin = !select.memberIsAdmin(prevState, userName)
+      if (isntAdmin) return fail(`Member '${userName}' is not an admin`, ...args)
+    }
 
-      // make sure member is admin
-      if (isAdminOnlyAction(action)) {
-        const isntAdmin = !select.memberIsAdmin(prevState, userName)
-        if (isntAdmin) return fail(`Member '${userName}' is not an admin`, ...args)
-      }
+    return VALID
+  },
+
+  /** the key that the link is signed with must be the author's signature key at that time */
+  signatureKeyIsCorrect: (...args) => {
+    const [prevState, link] = args
+    const action = link.body
+    const { type } = action
+
+    // at root link, team doesn't yet have members
+    if (type === ROOT) return VALID
+
+    const { userName, deviceName } = link.signed
+    const authorDevice = select.device(prevState, userName, deviceName)
+    if (link.signed.key !== authorDevice.keys.signature) {
+      const msg = `Wrong signature key. Link is signed with ${link.signed.key}, but ${userName}'s signature key on the device ${deviceName} is ${authorDevice.keys.signature}`
+      return fail(msg, ...args)
     }
     return VALID
   },
@@ -58,12 +71,23 @@ const validators: TeamStateValidatorSet = {
     return VALID
   },
 
-  // TODO: canOnlyChangeYourOwnKeys
   canOnlyChangeYourOwnKeys: (...args) => {
     const [prevState, link] = args
     if (link.body.type === 'CHANGE_MEMBER_KEYS') {
-      const linkAuthorScope = { type: 'MEMBER', name: link.signed.userName } as KeyScope
-      //...
+      const author = link.signed.userName
+      const authorIsAdmin = select.memberIsAdmin(prevState, author)
+      if (!authorIsAdmin) {
+        // Only admins can change another user's keys
+        const target = link.body.payload.keys.name
+        if (author !== target) return fail(`Can't change another user's keys.`, ...args)
+      }
+    } else if (link.body.type === 'CHANGE_DEVICE_KEYS') {
+      const authorUserName = link.signed.userName
+      const authorDeviceName = link.body.context.device.deviceName
+      // Devices can only change their own keys
+      const target = parseDeviceId(link.body.payload.keys.name)
+      if (authorUserName !== target.userName || authorDeviceName !== target.deviceName)
+        return fail(`Can't change another device's keys.`, ...args)
     }
     return VALID
   },
@@ -83,6 +107,7 @@ const validators: TeamStateValidatorSet = {
 }
 
 const fail = (message: string, prevState: TeamState, link: ActionLink<any>) => {
+  message = truncateHashes(message)
   return {
     isValid: false,
     error: new ValidationError(message, { prevState, link }),

@@ -16,6 +16,7 @@ import {
   tryToConnect,
 } from '/util/testing'
 import { getDeviceId } from '/device'
+import { keysetSummary } from '/util/keysetSummary'
 
 const log = debug('lf:auth:test')
 const { DEVICE, MEMBER } = KeyType
@@ -451,6 +452,7 @@ describe('connection', () => {
   it('lets a member use an invitation to add a device', async () => {
     const { alice, bob } = setup('alice', 'bob')
 
+    log(`bob laptop keys: ${keysetSummary(bob.device.keys)}`)
     // 👨🏻‍🦲💻📧->📱 on his laptop, Bob creates an invitation and gets it to his phone
     const { deviceName } = bob.phone
     const { seed } = bob.team.invite({ deviceName })

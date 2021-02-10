@@ -523,7 +523,7 @@ export class Protocol extends EventEmitter {
       const deviceId = challenge.name
       const { userName, deviceName } = parseDeviceId(deviceId)
 
-      const device = team.getDevice(userName, deviceName)
+      const device = team.device(userName, deviceName)
 
       const publicKeys = device.keys
       const validation = identity.verify(challenge, proof, publicKeys)
