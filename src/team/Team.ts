@@ -632,11 +632,7 @@ export class Team extends EventEmitter {
       case DEVICE: {
         this.log(`change device keys ${keysetSummary(newKeyset)}`)
 
-        assert(
-          devices.parseDeviceId(newKeyset.name).userName === this.userName ||
-            this.memberIsAdmin(this.userName),
-          `Can't change another member's secret keys`
-        )
+        assert(newKeyset.name === this.deviceId, `Can't change another device's secret keys`)
 
         const oldKeys = this.context.device.keys
         newKeyset.generation = oldKeys.generation + 1
