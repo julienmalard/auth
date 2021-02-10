@@ -306,13 +306,8 @@ export class Team extends EventEmitter {
    */
 
   /** Find a member's device by name */
-  public getDevice = (userName: string, deviceName: string): PublicDevice => {
-    const memberDevices = this.members(userName).devices || []
-    const device = memberDevices.find(d => d.deviceName === deviceName)
-    if (device === undefined)
-      throw new Error(`Member ${userName} does not have a device called ${deviceName}`)
-    return device
-  }
+  public device = (userName: string, deviceName: string): PublicDevice =>
+    select.device(this.state, userName, deviceName)
 
   /** Remove a member's device */
   public removeDevice = (userName: string, deviceName: string) => {
