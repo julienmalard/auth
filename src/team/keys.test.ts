@@ -87,7 +87,7 @@ describe('Team', () => {
       expect(tryToChangeBobsKeys).not.toThrow()
     })
 
-    it(`Alice can change Bob's device keys`, () => {
+    it(`Alice can't change Bob's device keys`, () => {
       const { alice, bob } = setup('alice', { user: 'bob', admin: false })
 
       const deviceId = getDeviceId(bob.device)
@@ -95,7 +95,7 @@ describe('Team', () => {
 
       const tryToChangeBobsKeys = () => alice.team.changeKeys(newKeys)
 
-      expect(tryToChangeBobsKeys).not.toThrow()
+      expect(tryToChangeBobsKeys).toThrow()
     })
 
     it(`Bob can't change Alice's keys`, () => {
