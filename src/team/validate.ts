@@ -1,4 +1,4 @@
-﻿import { isAdminOnlyAction } from '../chain/isAdminOnlyAction'
+import { isAdminOnlyAction } from '../chain/isAdminOnlyAction'
 import { ActionLink, ROOT } from '/chain'
 import { parseDeviceId } from '/device'
 import { KeyScope } from '/keyset'
@@ -26,11 +26,6 @@ const validators: TeamStateValidatorSet = {
     // at root link, team doesn't yet have members
     if (type === ROOT) return VALID
 
-    // make sure member exists
-    const noSuchMember = !select.hasMember(prevState, userName)
-    if (noSuchMember) return fail(`A member named '${userName}' was not found`, ...args)
-
-    // make sure member is admin
     if (isAdminOnlyAction(action)) {
       const isntAdmin = !select.memberIsAdmin(prevState, userName)
       if (isntAdmin) return fail(`Member '${userName}' is not an admin`, ...args)
