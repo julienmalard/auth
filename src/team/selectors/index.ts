@@ -1,4 +1,5 @@
-﻿export * from '/team/selectors/keys'
+﻿export * from '/team/selectors/device'
+export * from '/team/selectors/keys'
 export * from '/team/selectors/lockboxesInScope'
 export * from '/team/selectors/member'
 export * from '/team/selectors/scopesToRotate'
