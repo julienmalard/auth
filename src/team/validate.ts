@@ -1,10 +1,9 @@
-import { isAdminOnlyAction } from '../chain/isAdminOnlyAction'
+﻿import { isAdminOnlyAction } from '../chain/isAdminOnlyAction'
 import { ActionLink, ROOT } from '/chain'
 import { parseDeviceId } from '/device'
-import { KeyScope } from '/keyset'
 import * as select from '/team/selectors'
 import { TeamState, TeamStateValidator, TeamStateValidatorSet, ValidationArgs } from '/team/types'
-import { VALID, ValidationError } from '/util'
+import { truncateHashes, VALID, ValidationError } from '/util'
 
 export const validate: TeamStateValidator = (...args: ValidationArgs) => {
   for (const key in validators) {
@@ -43,13 +42,12 @@ const validators: TeamStateValidatorSet = {
     // at root link, team doesn't yet have members
     if (type === ROOT) return VALID
 
-    const author = select.member(prevState, link.signed.userName)
-    if (link.signed.key !== author.keys.signature)
-      return fail(
-        `Wrong signature key. 
-          Link is signed with ${link.signed.key}, but ${author}'s signature key is ${author.keys.signature}`,
-        ...args
-      )
+    const { userName, deviceName } = link.signed
+    const authorDevice = select.device(prevState, userName, deviceName)
+    if (link.signed.key !== authorDevice.keys.signature) {
+      const msg = `Wrong signature key. Link is signed with ${link.signed.key}, but ${userName}'s signature key on the device ${deviceName} is ${authorDevice.keys.signature}`
+      return fail(msg, ...args)
+    }
     return VALID
   },
 
@@ -109,6 +107,7 @@ const validators: TeamStateValidatorSet = {
 }
 
 const fail = (message: string, prevState: TeamState, link: ActionLink<any>) => {
+  message = truncateHashes(message)
   return {
     isValid: false,
     error: new ValidationError(message, { prevState, link }),
