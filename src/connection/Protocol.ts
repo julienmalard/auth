@@ -1,6 +1,7 @@
 ﻿import { asymmetric } from '@herbcaudill/crypto'
 import { EventEmitter } from 'events'
 import * as R from 'ramda'
+import { Transform } from 'stream'
 import { assign, createMachine, interpret, Interpreter } from 'xstate'
 import { protocolMachine } from './protocolMachine'
 import { getParentHashes, TeamLinkMap } from '/chain'
@@ -46,12 +47,13 @@ const { DEVICE } = KeyType
  */
 export class Protocol extends EventEmitter {
   private log: debug.Debugger
-
   private sendMessage: SendFunction
   private machine: Interpreter<ConnectionContext, ConnectionState, ConnectionMessage>
   private incomingMessageQueue: Record<number, NumberedConnectionMessage> = {}
   private outgoingMessageIndex: number = 0
   private isRunning: boolean = false
+
+  public stream: Transform
 
   constructor({ sendMessage, context }: ConnectionParams) {
     super()
@@ -59,19 +61,47 @@ export class Protocol extends EventEmitter {
     const name = hasInvitee(context) ? context.invitee.name : context.user.userName
     this.log = debug(`lf:auth:protocol:${name}`)
 
-    // If we're a user connecting with an invitation, we need to make sure that we're using the
-    // starter keys derived from our invitation seed
+    // If we're a user connecting with an invitation, we need to use the starter keys derived from
+    // our invitation seed
     if (hasInvitee(context) && context.user) {
       const starterKeys = generateStarterKeys(context.invitee, context.invitationSeed)
       context.user.keys = starterKeys
     }
 
-    // add a sequential index to any outgoing messages
+    // Expose a streaming interface
+    this.stream = new Transform({
+      transform: (chunk: any, _?: BufferEncoding | Callback, next?: Callback) => {
+        if (typeof _ === 'function') next = _
+        try {
+          // deserialize incoming messages and deliver them to the machine
+          const message = JSON.parse(chunk.toString())
+          this.deliver(message)
+          // callback with no error
+          if (next) next(null)
+        } catch (err) {
+          console.error(err)
+          // callback with error
+          if (next) next(err)
+        }
+      },
+    })
+
     this.sendMessage = (message: ConnectionMessage) => {
+      // add a sequential index to any outgoing messages
       const index = this.outgoingMessageIndex++
       this.logMessage('out', message, index)
-      sendMessage({ ...message, index })
+
+      const messageWithIndex = { ...message, index }
+      if (sendMessage) {
+        // manual interface: send message using provided function
+        sendMessage(messageWithIndex)
+      } else {
+        // streaming interface: serialize outgoing messages for the stream
+        const serializedMessage = JSON.stringify(messageWithIndex)
+        this.stream.push(serializedMessage)
+      }
     }
+
     // define state machine
     const machine = createMachine(protocolMachine, {
       actions: this.actions,
@@ -107,6 +137,7 @@ export class Protocol extends EventEmitter {
       this.machine.send(disconnectMessage) // send disconnect event to local machine
     }
     this.removeAllListeners()
+    this.stream.removeAllListeners()
     return this
   }
 
@@ -144,7 +175,7 @@ export class Protocol extends EventEmitter {
     return this.context.team
   }
 
-  /** Returns the connection's session key Jwhen we are in a connected state.
+  /** Returns the connection's session key when we are in a connected state.
    * Otherwise, returns `undefined`.
    */
   get sessionKey() {
@@ -603,3 +634,5 @@ const stateSummary = (state: any = 'disconnected'): string =>
         .map(key => `${key}:${stateSummary(state[key])}`)
         .filter(s => s.length)
         .join(',')
+
+type Callback = (error: Error | null | undefined) => void
