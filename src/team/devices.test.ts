@@ -1,5 +1,4 @@
-﻿import { KeyType } from '/keyset'
-import { setup as setupUsers } from '/util/testing'
+﻿import { setup as setupUsers } from '/util/testing'
 
 describe('Team', () => {
   const setup = () => {
@@ -25,6 +24,15 @@ describe('Team', () => {
       expect(alice.team.members('bob').devices).toHaveLength(0)
     })
 
+    it(`throws when trying to access a removed device`, () => {
+      const { alice } = setup()
+      const bobDevice = alice.team.members('bob').devices![0].deviceName
+      alice.team.removeDevice('bob', bobDevice)
+
+      const getDevice = () => alice.team.device('bob', bobDevice)
+      expect(getDevice).toThrow()
+    })
+
     it(`Bob cannot remove Alice's device`, () => {
       const { bob } = setup()
       const aliceDevice = bob.team.members('alice').devices![0].deviceName
@@ -38,6 +46,12 @@ describe('Team', () => {
       const aliceDevice = alice.team.device('alice', deviceName)
       expect(aliceDevice).not.toBeUndefined()
       expect(aliceDevice.deviceName).toBe(deviceName)
+    })
+
+    it(`throws when trying to access a nonexistent device`, () => {
+      const { alice } = setup()
+      const getDevice = () => alice.team.device('alice', 'alicez wrist communicator')
+      expect(getDevice).toThrow()
     })
 
     it('rotates keys after removing a device', () => {

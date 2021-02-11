@@ -55,13 +55,22 @@ export const hasInvitee = (
 ): c is InviteeInitialContext => 'invitee' in c
 
 export interface ConnectionParams {
-  /** A function to send messages to our peer (this is how you hook this up to your network stack) */
-  sendMessage: SendFunction
+  /** A function to send messages to our peer. This is one way to hook this up to your network stack -
+   * alternatively you can use the streaming interface.
+   */
+  sendMessage?: SendFunction
 
   context: InitialContext
 }
 
-export type ConnectionContext = {
+export interface ErrorPayload {
+  message: string
+  details?: any
+}
+
+export interface ConnectionContext
+  extends Partial<MemberInitialContext>,
+    Partial<InviteeInitialContext> {
   theyHaveInvitation?: boolean
   theirIdentityClaim?: KeyScope
   theirProofOfInvitation?: ProofOfInvitation
@@ -71,13 +80,9 @@ export type ConnectionContext = {
   seed?: Base64
   theirEncryptedSeed?: Base64
   sessionKey?: Base64
-  error?: {
-    message: string
-    details?: any
-  }
+  error?: ErrorPayload
   device: DeviceWithSecrets
-} & Partial<MemberInitialContext> &
-  Partial<InviteeInitialContext>
+}
 
 export type StateMachineAction =
   | ActionFunction<ConnectionContext, ConnectionMessage>

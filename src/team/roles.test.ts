@@ -1,4 +1,5 @@
 import { symmetric } from '@herbcaudill/crypto'
+import { both } from 'ramda'
 import { ADMIN } from '/role'
 import * as teams from '/team'
 import { profile } from '/util/profile'
@@ -164,12 +165,11 @@ describe('Team', () => {
     })
 
     it('allows an admin other than Alice to add a member', () => {
-      // 👩🏾 Alice creates a team and adds 👨🏻‍🦲 Bob as an admin
-      const { bob, charlie } = setup([
+      const { bob, charlie } = setup(
         'alice',
         { user: 'bob', admin: true },
-        { user: 'charlie', member: false },
-      ])
+        { user: 'charlie', member: false }
+      )
 
       // 👨🏻‍🦲 Bob tries to add 👳🏽‍♂️ Charlie to the team
       const attemptToAddUser = () => bob.team.add(charlie.user)
@@ -179,44 +179,82 @@ describe('Team', () => {
     })
 
     it('does not allow a non-admin to add a member', () => {
-      // Alice creates a team and adds 👨🏻‍🦲 Bob with no admin rights
-      const { bob, charlie } = setup([
+      const { bob, charlie } = setup(
         'alice',
         { user: 'bob', admin: false },
-        { user: 'charlie', member: false },
-      ])
+        { user: 'charlie', member: false }
+      )
 
       // 👨🏻‍🦲 Bob tries to add 👳🏽‍♂️ Charlie to the team
       const addUser = () => bob.team.add(charlie.user)
 
       // 👨🏻‍🦲 Bob can't because he is not an admin
-      expect(addUser).toThrow(/not an admin/)
+      expect(addUser).toThrow()
     })
 
     it('does not allow a non-admin to remove a member', () => {
-      // 👩🏾 Alice creates a team and adds 👨🏻‍🦲 Bob and 👳🏽‍♂️ Charlie
-      const { bob } = setup([
+      const { bob } = setup(
         'alice',
         { user: 'bob', admin: false },
-        { user: 'charlie', admin: false },
-      ])
+        { user: 'charlie', admin: false }
+      )
 
       // 👨🏻‍🦲 Bob tries to remove 👳🏽‍♂️ Charlie
       const remove = () => bob.team.remove('charlie')
 
       // 👨🏻‍🦲 Bob can't because he is not an admin
-      expect(remove).toThrow(/not an admin/)
+      expect(remove).toThrow()
+    })
+
+    it('does not allow a non-admin to add a member to a role', () => {
+      const { bob } = setup(
+        'alice',
+        { user: 'bob', admin: false },
+        { user: 'charlie', admin: false }
+      )
+
+      // 👨🏻‍🦲 Bob tries to make 👳🏽‍♂️ Charlie an admin
+      const add = () => bob.team.addMemberRole('charlie', ADMIN)
+
+      // 👨🏻‍🦲 Bob can't because he is not an admin
+      expect(add).toThrow()
+    })
+
+    it('does not allow a non-admin to remove a member from a role', () => {
+      const { charlie } = setup('alice', 'bob', { user: 'charlie', admin: false })
+
+      // 👳🏽‍♂️ Charlie tries to remove 👨🏻‍🦲 Bob as admin
+      const remove = () => charlie.team.removeMemberRole('bob', ADMIN)
+
+      // 👳🏽‍♂️ Charlie can't because he is not an admin
+      expect(remove).toThrow()
+    })
+
+    it(`can't remove the only admin`, () => {
+      const { alice } = setup('alice', { user: 'bob', admin: false })
+
+      const remove = () => alice.team.removeMemberRole('alice', ADMIN)
+
+      expect(remove).toThrow()
+    })
+
+    it('Alice can remove herself as admin as long as there at least one other admin', () => {
+      const { alice } = setup('alice', 'bob')
+
+      const remove = () => alice.team.removeMemberRole('alice', ADMIN)
+
+      expect(remove).not.toThrow()
     })
 
     it('rotates keys when a member is removed from a role', async () => {
       const roles_test_rotate = () => {
         const COOLKIDS = 'coolkids'
 
-        const { alice, bob, charlie } = setup([
+        const { alice, bob, charlie } = setup(
           'alice',
           { user: 'bob', admin: false },
-          { user: 'charlie', admin: false },
-        ])
+          { user: 'charlie', admin: false }
+        )
 
         alice.team.addRole(COOLKIDS)
         alice.team.addMemberRole('bob', COOLKIDS)

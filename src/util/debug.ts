@@ -3,6 +3,8 @@ import { EOL } from 'os'
 import originalDebug from 'debug'
 import { truncateHashes } from './truncateHashes'
 
+// ignore file coverage
+
 const logFile = 'log.txt'
 
 const substituteTokens = (s: string) => {

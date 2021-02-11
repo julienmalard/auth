@@ -62,6 +62,7 @@ export class Team extends EventEmitter {
    */
   constructor(options: TeamOptions) {
     super()
+    // ignore coverage
     this.seed = options.seed ?? randomKey()
     this.context = options.context
 
@@ -290,7 +291,10 @@ export class Team extends EventEmitter {
 
   /** Remove a role from a member */
   public removeMemberRole = (userName: string, roleName: string) => {
-    // TODO: don't allow removing the last admin
+    if (roleName === ADMIN) {
+      const adminCount = this.membersInRole(ADMIN).length
+      assert(adminCount > 1, `Can't remove the last admin`)
+    }
 
     // create new keys & lockboxes for any keys this person had access to via this role
     const lockboxes = this.generateNewLockboxes({ type: ROLE, name: roleName })
@@ -499,18 +503,18 @@ export class Team extends EventEmitter {
 
       // create new device keys for ourselves to replace the ephemeral ones from the invitation
       const deviceId = getDeviceId(this.context.device)
-      this.context.device.keys = keysets.create({ type: DEVICE, name: deviceId })
-      this.changeKeys(this.context.device.keys)
+      const newKeys = keysets.create({ type: DEVICE, name: deviceId })
+      this.changeKeys(newKeys)
     } else {
       // if we did already have a `user` defined, we're joining as a new user.
       this.log(`joining as new user`)
 
-      // we need to create new user keys to replace the ephemeral ones from the invitation
+      // create new user keys to replace the ephemeral ones from the invitation
       const { userName } = this.context.user
-      this.context.user.keys = keysets.create({ type: MEMBER, name: userName })
-      this.changeKeys(this.context.user.keys)
+      const newKeys = keysets.create({ type: MEMBER, name: userName })
+      this.changeKeys(newKeys)
 
-      // we need to add our device to the signature chain, as well as a lockbox for that device containing our user keys
+      // add our device to the signature chain, as well as a lockbox for that device containing our user keys
       const deviceLockbox = lockbox.create(this.context.user.keys, this.context.device.keys)
       const device = redactDevice(this.context.device)
       this.dispatch({

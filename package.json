@@ -1,6 +1,6 @@
 {
   "name": "@localfirst/auth",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "author": {
     "name": "Herb Caudill",
     "email": "herb@devresults.com"
@@ -44,6 +44,7 @@
     "@types/ramda": "0",
     "cross-env": "6",
     "husky": "4",
+    "jest": "26",
     "prettier": "2",
     "ts-jest": "26",
     "tsdx": "0",

@@ -183,6 +183,32 @@ describe('Team', () => {
         // ✅ Now Alice has 💻📱 two devices on the signature chain
         expect(phoneTeam.members('alice').devices).toHaveLength(2)
       })
+
+      it('allows revoking an invitation', () => {
+        let { alice, bob } = setup('alice', 'bob')
+
+        const deviceName = 'alicez phone'
+
+        // 👩🏾 Alice only has 💻 one device on the signature chain
+        expect(alice.team.members('alice').devices).toHaveLength(1)
+
+        // 💻 on her laptop, Alice generates an invitation for her phone
+        const { id, seed } = alice.team.invite({ deviceName })
+
+        expect(alice.team.members('alice').devices).toHaveLength(2)
+
+        // 📱 Alice gets the seed to her phone, perhaps by typing it in or by scanning a QR code.
+        // Alice's phone uses the seed to generate her starter keys and her proof of invitation
+        const phone = devices.create('alice', deviceName)
+        const deviceId = getDeviceId(phone)
+        phone.keys = generateStarterKeys({ type: DEVICE, name: deviceId }, seed)
+        const proofOfInvitation = generateProof(seed, { type: DEVICE, name: deviceId })
+
+        // 👩🏾 Alice changes her mind and revokes the invitation
+        alice.team.revokeInvitation(id)
+
+        expect(alice.team.members('alice').devices).toHaveLength(1)
+      })
     })
   })
 })

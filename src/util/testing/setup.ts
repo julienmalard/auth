@@ -1,6 +1,5 @@
 ﻿import { cache } from './cache'
-import { InitialContext } from '/connection'
-import { Connection } from '/connection/Connection'
+import { InitialContext, Connection } from '/connection'
 import { LocalUserContext } from '/context'
 import * as devices from '/device'
 import { DeviceWithSecrets } from '/device'
@@ -11,6 +10,8 @@ import { Team } from '/team'
 import * as users from '/user'
 import { User } from '/user'
 import { arrayToMap, assert } from '/util'
+
+// ignore file coverage
 
 /**
 Usage: 
