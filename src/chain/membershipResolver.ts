@@ -66,19 +66,19 @@ const filterFactories: Record<string, ActionFilterFactory> = {
   },
 
   // RULE: If A is removing C, B can't overcome this by concurrently removing C then adding C back
-  cantAddBackRemovedMember: (branches) => {
+  cantAddBackRemovedMember: branches => {
     const removedMembers = getRemovedAndDemotedMembers(branches)
     return addedNotIn(removedMembers)
   },
 
   // RULE: If B is removed, anything they do concurrently is omitted
-  cantDoAnythingWhenRemoved: (branches) => {
+  cantDoAnythingWhenRemoved: branches => {
     const removedMembers = getRemovedMembers(branches)
     return authorNotIn(removedMembers)
   },
 
   // RULE: If B is demoted, any admin-only actions they do concurrently are omitted
-  cantDoAdminActionsWhenDemoted: (branches) => {
+  cantDoAdminActionsWhenDemoted: branches => {
     const demotedMembers = getDemotedMembers(branches)
     return (link: TeamActionLink) => {
       const authorNotDemoted = authorNotIn(demotedMembers)
@@ -96,12 +96,12 @@ const leastSenior = (chain: TeamSignatureChain, userNames: string[]) =>
 const isRemovalAction = (link: TeamActionLink): boolean => link.body.type === 'REMOVE_MEMBER'
 
 const getRemovals = (branches: TwoBranches) =>
-  branches.flatMap((branch) => branch.filter(isRemovalAction)) as RemoveAction[]
+  branches.flatMap(branch => branch.filter(isRemovalAction)) as RemoveAction[]
 
 const isDemotionAction = (link: TeamActionLink): boolean => link.body.type === 'REMOVE_MEMBER_ROLE' //&& link.body.payload.roleName === ADMIN
 
 const getDemotions = (branches: TwoBranches) =>
-  branches.flatMap((branch) => branch.filter(isDemotionAction)) as RemoveAction[]
+  branches.flatMap(branch => branch.filter(isDemotionAction)) as RemoveAction[]
 
 const getRemovalsAndDemotions = (branches: TwoBranches) =>
   getRemovals(branches).concat(getDemotions(branches))
@@ -132,8 +132,6 @@ const addedNotIn = (excludeList: string[]) => (link: TeamActionLink): boolean =>
     } else if (link.body.type === 'ADD_MEMBER_ROLE') {
       const addAction = link.body as LinkBody<AddMemberRoleAction>
       return addAction.payload.userName
-    } else {
-      throw new Error()
     }
   }
 
