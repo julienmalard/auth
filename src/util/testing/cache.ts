@@ -2,6 +2,8 @@ import fs from 'fs'
 import path from 'path'
 import { memoize } from '../memoize'
 
+// ignore file coverage
+
 const BYPASS = false
 
 // This is used for caching test assets in the file system to save time
