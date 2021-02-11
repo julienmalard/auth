@@ -17,7 +17,8 @@ export const append = <A extends Action>(
     prev: chain.head,
   } as NonRootLinkBody<A>
 
-  const { userName, deviceName, keys } = context.device
+  const { userName, deviceName } = context.device
+  const keys = context.user.keys
   const hash = hashLink(body)
 
   // attach signature
