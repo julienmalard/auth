@@ -63,7 +63,14 @@ export interface ConnectionParams {
   context: InitialContext
 }
 
-export type ConnectionContext = {
+export interface ErrorPayload {
+  message: string
+  details?: any
+}
+
+export interface ConnectionContext
+  extends Partial<MemberInitialContext>,
+    Partial<InviteeInitialContext> {
   theyHaveInvitation?: boolean
   theirIdentityClaim?: KeyScope
   theirProofOfInvitation?: ProofOfInvitation
@@ -73,13 +80,9 @@ export type ConnectionContext = {
   seed?: Base64
   theirEncryptedSeed?: Base64
   sessionKey?: Base64
-  error?: {
-    message: string
-    details?: any
-  }
+  error?: ErrorPayload
   device: DeviceWithSecrets
-} & Partial<MemberInitialContext> &
-  Partial<InviteeInitialContext>
+}
 
 export type StateMachineAction =
   | ActionFunction<ConnectionContext, ConnectionMessage>
