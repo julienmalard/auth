@@ -11,6 +11,8 @@ import * as users from '/user'
 import { User } from '/user'
 import { arrayToMap, assert } from '/util'
 
+// ignore file coverage
+
 /**
 Usage: 
 
