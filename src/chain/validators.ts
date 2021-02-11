@@ -1,5 +1,4 @@
-﻿import { memoize } from '/util'
-import { signatures } from '@herbcaudill/crypto'
+﻿import { signatures } from '@herbcaudill/crypto'
 import { getRoot } from '/chain/getRoot'
 import { hashLink } from '/chain/hashLink'
 import {
@@ -8,10 +7,9 @@ import {
   NonRootLinkBody,
   ROOT,
   RootLinkBody,
-  Validator,
   ValidatorSet,
 } from '/chain/types'
-import { debug, ValidationError } from '/util'
+import { debug, memoize, ValidationError } from '/util'
 
 const log = debug('lf:auth:validators')
 
