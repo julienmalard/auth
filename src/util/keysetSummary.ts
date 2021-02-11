@@ -1,5 +1,6 @@
 import { hasSecrets, KeysetWithSecrets, PublicKeyset, getScope } from '/keyset'
 
+// ignore coverage
 export const keysetSummary = (keyset: PublicKeyset | KeysetWithSecrets | undefined) => {
   if (keyset === undefined) return 'none'
   const scope = getScope(keyset)
