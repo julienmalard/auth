@@ -62,6 +62,7 @@ export class Team extends EventEmitter {
    */
   constructor(options: TeamOptions) {
     super()
+    // ignore coverage
     this.seed = options.seed ?? randomKey()
     this.context = options.context
 
