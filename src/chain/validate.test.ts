@@ -57,6 +57,7 @@ describe('chains', () => {
         ...root,
         signed: {
           userName: alice.userName,
+          deviceName: 'alicez phone',
           signature,
           key: publicKey,
         },
