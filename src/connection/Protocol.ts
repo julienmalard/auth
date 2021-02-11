@@ -33,6 +33,7 @@ import {
 } from '/connection/types'
 import { getDeviceId, parseDeviceId } from '/device'
 import * as invitations from '/invitation'
+import { generateStarterKeys } from '/invitation/generateStarterKeys'
 import { KeyType, randomKey } from '/keyset'
 import { Team } from '/team'
 import { arrayToMap, assert, debug } from '/util'
@@ -55,9 +56,17 @@ export class Protocol extends EventEmitter {
   constructor({ sendMessage, context }: ConnectionParams) {
     super()
 
-    const debugLabel = hasInvitee(context) ? context.invitee.name : context.user.userName
-    this.log = debug(`lf:auth:protocol:${debugLabel}`)
+    const name = hasInvitee(context) ? context.invitee.name : context.user.userName
+    this.log = debug(`lf:auth:protocol:${name}`)
 
+    // If we're a user connecting with an invitation, we need to make sure that we're using the
+    // starter keys derived from our invitation seed
+    if (hasInvitee(context) && context.user) {
+      const starterKeys = generateStarterKeys(context.invitee, context.invitationSeed)
+      context.user.keys = starterKeys
+    }
+
+    // add a sequential index to any outgoing messages
     this.sendMessage = (message: ConnectionMessage) => {
       const index = this.outgoingMessageIndex++
       this.logMessage('out', message, index)
