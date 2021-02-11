@@ -212,8 +212,8 @@ export class Connection extends EventEmitter {
   // ACTIONS
 
   private fail = (message: string, details?: any) =>
-    assign({
-      error: (context, event) => {
+    assign<ConnectionContext, ConnectionMessage>({
+      error: () => {
         const errorPayload = { message, details }
         const errorMessage: ErrorMessage = { type: 'ERROR', payload: errorPayload }
         this.machine.send(errorMessage) // force error state locally
