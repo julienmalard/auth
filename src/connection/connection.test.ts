@@ -1,5 +1,4 @@
-﻿import { Connection } from './Connection'
-import { generateStarterKeys } from '../invitation/generateStarterKeys'
+﻿import { generateStarterKeys } from '../invitation/generateStarterKeys'
 import { KeyType } from '/keyset'
 import { ADMIN } from '/role'
 import { debug } from '/util'
@@ -17,6 +16,7 @@ import {
 } from '/util/testing'
 import { getDeviceId } from '/device'
 import { keysetSummary } from '/util/keysetSummary'
+import { Connection } from './Connection'
 
 const log = debug('lf:auth:test')
 const { DEVICE, MEMBER } = KeyType
@@ -637,9 +637,9 @@ describe('connection', () => {
     // 👨🏻‍🦲📧<->👩🏾 Bob connects to Alice and uses his invitation to join
     bob.connectionContext = { ...bob.connectionContext, invitationSeed: seed }
 
-    const a = (alice.connection.bob = new Connection(alice.connectionContext).start())
-    const b = (bob.connection.alice = new Connection(bob.connectionContext).start())
-    a.pipe(b).pipe(a)
+    const a = (alice.connection.bob = new Connection({ context: alice.connectionContext }).start())
+    const b = (bob.connection.alice = new Connection({ context: bob.connectionContext }).start())
+    a.stream.pipe(b.stream).pipe(a.stream)
 
     await all([a, b], 'connected')
     alice.team = a.team!
@@ -659,9 +659,9 @@ describe('connection', () => {
 
     // 👨🏻‍🦲📧<->👩🏾 Bob tries to connect, but mistypes his code
     bob.connectionContext = { ...bob.connectionContext, invitationSeed: 'password' }
-    alice.connection.bob = new Connection(alice.connectionContext).start()
-    bob.connection.alice = new Connection(bob.connectionContext).start()
-    bob.connection.alice.pipe(alice.connection.bob).pipe(bob.connection.alice)
+    alice.connection.bob = new Connection({ context: alice.connectionContext }).start()
+    bob.connection.alice = new Connection({ context: bob.connectionContext }).start()
+    bob.connection.alice.stream.pipe(alice.connection.bob.stream).pipe(bob.connection.alice.stream)
 
     // ❌ The connection fails
     await disconnection(alice, bob)
@@ -677,7 +677,7 @@ describe('connection', () => {
 
     // bob.connection.alice = new Connection(bob.context).start()
     // alice.connection.bob = new Connection(alice.context).start()
-    alice.connection.bob.pipe(bob.connection.alice).pipe(alice.connection.bob)
+    alice.connection.bob.stream.pipe(bob.connection.alice.stream).pipe(alice.connection.bob.stream)
 
     // ✅ that works
     await connection(bob, alice)
@@ -744,9 +744,9 @@ describe('connection', () => {
       user: bob.user,
       team: bob.team,
     }
-    const eveOnBobsPhone = new Connection(phoneContext).start()
-    const heyCharlie = new Connection(charlie.connectionContext).start()
-    heyCharlie.pipe(eveOnBobsPhone).pipe(heyCharlie)
+    const eveOnBobsPhone = new Connection({ context: phoneContext }).start()
+    const heyCharlie = new Connection({ context: charlie.connectionContext }).start()
+    heyCharlie.stream.pipe(eveOnBobsPhone.stream).pipe(heyCharlie.stream)
 
     // GRRR foiled again
     await all([eveOnBobsPhone, heyCharlie], 'disconnected')
