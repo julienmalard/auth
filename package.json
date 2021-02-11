@@ -44,6 +44,7 @@
     "@types/ramda": "0",
     "cross-env": "6",
     "husky": "4",
+    "jest": "26",
     "prettier": "2",
     "ts-jest": "26",
     "tsdx": "0",
