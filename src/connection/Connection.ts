@@ -1,4 +1,4 @@
-﻿import { asymmetric } from '@herbcaudill/crypto'
+import { asymmetric } from '@herbcaudill/crypto'
 import { EventEmitter } from 'events'
 import * as R from 'ramda'
 import { Transform } from 'stream'
@@ -306,10 +306,15 @@ export class Connection extends EventEmitter {
       peer: context => {
         assert(context.team)
         assert(context.theirIdentityClaim)
-        // TODO: team.members(theirIdentityClaim) ?
         const deviceId = context.theirIdentityClaim.name
         const { userName } = parseDeviceId(deviceId)
-        return context.team.members(userName)
+        if (context.team.has(userName)) {
+          // peer still on the team
+          return context.team.members(userName)
+        } else {
+          // peer was removed from team
+          return undefined
+        }
       },
     }),
 
