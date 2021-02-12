@@ -7,6 +7,7 @@ import {
   AddMemberAction,
   AddMemberRoleAction,
   Branch,
+  Link,
   LinkBody,
   RemoveMemberAction,
   RemoveMemberRoleAction,
@@ -96,12 +97,12 @@ const leastSenior = (chain: TeamSignatureChain, userNames: string[]) =>
 const isRemovalAction = (link: TeamActionLink): boolean => link.body.type === 'REMOVE_MEMBER'
 
 const getRemovals = (branches: TwoBranches) =>
-  branches.flatMap(branch => branch.filter(isRemovalAction)) as RemoveAction[]
+  branches.flatMap(branch => branch.filter(isRemovalAction)) as RemoveActionLink[]
 
 const isDemotionAction = (link: TeamActionLink): boolean => link.body.type === 'REMOVE_MEMBER_ROLE' //&& link.body.payload.roleName === ADMIN
 
 const getDemotions = (branches: TwoBranches) =>
-  branches.flatMap(branch => branch.filter(isDemotionAction)) as RemoveAction[]
+  branches.flatMap(branch => branch.filter(isDemotionAction)) as RemoveActionLink[]
 
 const getRemovalsAndDemotions = (branches: TwoBranches) =>
   getRemovals(branches).concat(getDemotions(branches))
@@ -112,7 +113,7 @@ const getRemovedAndDemotedMembers = (branches: TwoBranches) =>
 const getRemovedMembers = (branches: TwoBranches) => getRemovals(branches).map(getTarget)
 const getDemotedMembers = (branches: TwoBranches) => getDemotions(branches).map(getTarget)
 
-const getTarget = (link: RemoveAction): string => link.body.payload.userName
+const getTarget = (link: RemoveActionLink): string => link.body.payload.userName
 
 const getAuthor = (link: TeamActionLink): string => link.signed.userName
 
@@ -122,10 +123,7 @@ const authorNotIn = (excludeList: string[]) => (link: TeamActionLink): boolean =
   !excludeList.includes(getAuthor(link))
 
 const addedNotIn = (excludeList: string[]) => (link: TeamActionLink): boolean => {
-  const isAddAction = (link: TeamActionLink): boolean =>
-    link.body.type === 'ADD_MEMBER' || link.body.type === 'ADD_MEMBER_ROLE'
-
-  const addedUserName = (link: TeamActionLink): string => {
+  const addedUserName = (link: AddActionLink): string => {
     if (link.body.type === 'ADD_MEMBER') {
       const addAction = link.body as LinkBody<AddMemberAction>
       return addAction.payload.member.userName
@@ -144,4 +142,10 @@ const addedNotIn = (excludeList: string[]) => (link: TeamActionLink): boolean =>
 
 const noFilter: ActionFilter = (_: any) => true
 
-type RemoveAction = ActionLink<RemoveMemberAction | RemoveMemberRoleAction>
+// type guards
+
+const isAddAction = (link: TeamActionLink): link is AddActionLink =>
+  link.body.type === 'ADD_MEMBER' || link.body.type === 'ADD_MEMBER_ROLE'
+
+type RemoveActionLink = ActionLink<RemoveMemberAction | RemoveMemberRoleAction>
+type AddActionLink = ActionLink<AddMemberAction | AddMemberRoleAction>
