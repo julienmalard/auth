@@ -6,14 +6,10 @@ import { UserStuff } from './setup'
 // HELPERS
 
 export const tryToConnect = async (a: UserStuff, b: UserStuff) => {
-  const aConnection = (a.connection[b.userName] = new Connection({
-    context: a.connectionContext,
-  }).start())
-  const bConnection = (b.connection[a.userName] = new Connection({
-    context: b.connectionContext,
-  }).start())
+  const aConn = (a.connection[b.userName] = new Connection({ context: a.context }).start())
+  const bConn = (b.connection[a.userName] = new Connection({ context: b.context }).start())
 
-  aConnection.stream.pipe(bConnection.stream).pipe(aConnection.stream)
+  aConn.stream.pipe(bConn.stream).pipe(aConn.stream)
 }
 /** Connects the two members and waits for them to be connected */
 
@@ -24,7 +20,7 @@ export const connect = async (a: UserStuff, b: UserStuff) => {
 /** Connects a (a member) with b (invited using the given seed). */
 
 export const connectWithInvitation = async (a: UserStuff, b: UserStuff, seed: string) => {
-  b.connectionContext = {
+  b.context = {
     user: b.user,
     device: b.device,
     invitee: { type: KeyType.MEMBER, name: b.userName },
@@ -43,7 +39,7 @@ export const connectPhoneWithInvitation = async (a: UserStuff, seed: string) => 
     invitationSeed: seed,
   } as InitialContext
 
-  const laptop = new Connection({ context: a.connectionContext }).start()
+  const laptop = new Connection({ context: a.context }).start()
   const phone = new Connection({ context: phoneContext }).start()
 
   laptop.stream.pipe(phone.stream).pipe(laptop.stream)
