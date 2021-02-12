@@ -29,6 +29,9 @@ export const actionFingerprint = (link: TeamActionLink) => {
       case 'CHANGE_MEMBER_KEYS':
       case 'CHANGE_DEVICE_KEYS':
         return JSON.stringify(action.payload.keys)
+      default:
+        // ignore coverage
+        return JSON.stringify(action.payload)
     }
   }
 
