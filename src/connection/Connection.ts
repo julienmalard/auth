@@ -1,4 +1,4 @@
-﻿import { asymmetric } from '@herbcaudill/crypto'
+﻿import { asymmetric, Payload, symmetric } from '@herbcaudill/crypto'
 import { EventEmitter } from 'events'
 import { Transform } from 'stream'
 import { assign, createMachine, interpret, Interpreter } from 'xstate'
@@ -10,6 +10,7 @@ import {
   ChallengeIdentityMessage,
   ConnectionMessage,
   DisconnectMessage,
+  EncryptedMessage,
   ErrorMessage,
   HelloMessage,
   LocalUpdateMessage,
@@ -187,6 +188,15 @@ export class Connection extends EventEmitter {
     )
   }
 
+  /** Sends an encrypted message to the peer we're connected with */
+  public send = (message: Payload) => {
+    assert(this.context.sessionKey)
+    console.log('sessionKey (send)', this.context.sessionKey)
+
+    const encryptedMessage = symmetric.encrypt(message, this.context.sessionKey)
+    this.sendMessage({ type: 'ENCRYPTED_MESSAGE', payload: encryptedMessage })
+  }
+
   /** Passes an incoming message from the peer on to this protocol machine, guaranteeing that
    *  messages will be delivered in the intended order (according to the `index` field on the message) */
   public async deliver(incomingMessage: NumberedConnectionMessage) {
@@ -220,6 +230,8 @@ export class Connection extends EventEmitter {
 
   /** These are referred to by name in `connectionMachine` (e.g. `actions: 'sendHello'`) */
   private readonly actions: Record<string, StateMachineAction> = {
+    // initializing
+
     sendHello: async context => {
       this.sendMessage({
         type: 'HELLO',
@@ -417,6 +429,16 @@ export class Connection extends EventEmitter {
         return deriveSharedKey(ourSeed, theirSeed)
       },
     }),
+
+    // communicating
+
+    receiveEncryptedMessage: (context, event) => {
+      assert(context.sessionKey)
+      const encryptedMessage = (event as EncryptedMessage).payload
+      console.log('sessionKey', context.sessionKey)
+      const decryptedMessage = symmetric.decrypt(encryptedMessage, context.sessionKey)
+      this.emit('message', decryptedMessage)
+    },
 
     // failure
 

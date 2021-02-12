@@ -420,6 +420,12 @@ export const protocolMachine: MachineConfig<
           cond: 'headsAreDifferent',
           target: '#synchronizing',
         },
+
+        // deliver any encrypted messages
+        ENCRYPTED_MESSAGE: {
+          actions: ['receiveEncryptedMessage'],
+          target: 'connected',
+        },
       },
     },
 

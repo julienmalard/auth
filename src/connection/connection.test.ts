@@ -256,15 +256,15 @@ describe('connection', () => {
 
     // 👩🏾 Alice invites 👳🏽‍♂️ Charlie
     const { seed: charlieSeed } = alice.team.invite('charlie')
-    charlie.connectionContext = {
-      ...charlie.connectionContext,
+    charlie.context = {
+      ...charlie.context,
       invitationSeed: charlieSeed,
     }
 
     // 👩🏾 Alice invites 👴 Dwight
     const { seed: dwightSeed } = alice.team.invite('dwight')
-    dwight.connectionContext = {
-      ...dwight.connectionContext,
+    dwight.context = {
+      ...dwight.context,
       invitationSeed: dwightSeed,
     }
 
@@ -635,10 +635,10 @@ describe('connection', () => {
     const { seed } = alice.team.invite({ userName: 'bob' })
 
     // 👨🏻‍🦲📧<->👩🏾 Bob connects to Alice and uses his invitation to join
-    bob.connectionContext = { ...bob.connectionContext, invitationSeed: seed }
+    bob.context = { ...bob.context, invitationSeed: seed }
 
-    const a = (alice.connection.bob = new Connection({ context: alice.connectionContext }).start())
-    const b = (bob.connection.alice = new Connection({ context: bob.connectionContext }).start())
+    const a = (alice.connection.bob = new Connection({ context: alice.context }).start())
+    const b = (bob.connection.alice = new Connection({ context: bob.context }).start())
     a.stream.pipe(b.stream).pipe(a.stream)
 
     await all([a, b], 'connected')
@@ -658,16 +658,16 @@ describe('connection', () => {
     alice.team.invite({ userName: 'bob', seed })
 
     // 👨🏻‍🦲📧<->👩🏾 Bob tries to connect, but mistypes his code
-    bob.connectionContext = { ...bob.connectionContext, invitationSeed: 'password' }
-    alice.connection.bob = new Connection({ context: alice.connectionContext }).start()
-    bob.connection.alice = new Connection({ context: bob.connectionContext }).start()
+    bob.context = { ...bob.context, invitationSeed: 'password' }
+    alice.connection.bob = new Connection({ context: alice.context }).start()
+    bob.connection.alice = new Connection({ context: bob.context }).start()
     bob.connection.alice.stream.pipe(alice.connection.bob.stream).pipe(bob.connection.alice.stream)
 
     // ❌ The connection fails
     await disconnection(alice, bob)
 
     // 👨🏻‍🦲📧<->👩🏾 Bob tries again with the right code this time
-    bob.connectionContext = { ...bob.connectionContext, invitationSeed: 'passw0rd' }
+    bob.context = { ...bob.context, invitationSeed: 'passw0rd' }
 
     // we can make this work by uncommenting the following lines, which start Alice and Bob
     // out with shiny new connections. However we want Bob to be able to try again with the same
@@ -745,7 +745,7 @@ describe('connection', () => {
       team: bob.team,
     }
     const eveOnBobsPhone = new Connection({ context: phoneContext }).start()
-    const heyCharlie = new Connection({ context: charlie.connectionContext }).start()
+    const heyCharlie = new Connection({ context: charlie.context }).start()
     heyCharlie.stream.pipe(eveOnBobsPhone.stream).pipe(heyCharlie.stream)
 
     // GRRR foiled again
@@ -775,10 +775,29 @@ describe('connection', () => {
     // GRRR foiled again
     await disconnection(bob, charlie)
 
-    // Alice sends Bob a new invitation; he's able to use it to connect from his phone
+    // TODO: Alice sends Bob a new invitation; he's able to use it to connect from his phone
 
     // const { seed } = bob.team.invite({ deviceName: 'phone' })
     // bob.phone.keys = generateStarterKeys({ type: DEVICE, name: getDeviceId(bob.phone) }, seed)
     // await connectPhoneWithInvitation(bob, seed)
+  })
+
+  it.only('allows Alice and Bob to send each other encrypted messages', async done => {
+    const { alice, bob } = setup('alice', 'bob')
+
+    // 👩🏾 👨🏻‍🦲 Alice and Bob both join the channel
+    await connect(alice, bob)
+
+    // 👨🏻‍🦲 Bob sets up his message handler
+    bob.connection.alice.once('message', receiveMessage)
+
+    // 👩🏾 Alice sends a message
+    alice.connection.bob.send('hello')
+
+    // 👨🏻‍🦲 Bob receives it
+    function receiveMessage(d: string) {
+      expect(d).toEqual('hello')
+      done()
+    }
   })
 })
