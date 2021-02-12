@@ -203,7 +203,7 @@ export class Team extends EventEmitter {
     assert(identityClaim.type === DEVICE) // we always authenticate as devices now
     const deviceId = identityClaim.name
     const { userName, deviceName } = parseDeviceId(deviceId)
-    return this.device(userName, deviceName) !== undefined
+    return this.hasDevice(userName, deviceName)
   }
 
   public verifyIdentity = (challenge: Challenge, proof: Base64) => {
@@ -373,12 +373,20 @@ export class Team extends EventEmitter {
   /**************** DEVICES
    */
 
+  /** Returns true if the given member has a device by the given name */
+  public hasDevice = (userName: string, deviceName: string): boolean =>
+    select.hasDevice(this.state, userName, deviceName)
+
   /** Find a member's device by name */
   public device = (userName: string, deviceName: string): PublicDevice =>
     select.device(this.state, userName, deviceName)
 
   /** Remove a member's device */
   public removeDevice = (userName: string, deviceName: string) => {
+    assert(
+      this.hasDevice(userName, deviceName),
+      `Member ${userName} does not have a device called ${deviceName}`
+    )
     // create new keys & lockboxes for any keys this device had access to
     const deviceId = getDeviceId({ userName, deviceName })
     const lockboxes = this.generateNewLockboxes({ type: DEVICE, name: deviceId })
@@ -489,7 +497,7 @@ export class Team extends EventEmitter {
     return { seed, id: invitation.id }
   }
 
-  /** Revoke an invitation. */
+  /** Revoke an invitation and remove the member or device that was invited. */
   public revokeInvitation = (id: string) => {
     // remove the device or user that was invited
     const invitation = this.getInvitation(id)
@@ -519,7 +527,7 @@ export class Team extends EventEmitter {
   }
 
   public getInvitation = (id: string) => {
-    // make sure the invitation exists
+    // throw if the invitation doesn't exist
     assert(this.hasInvitation(id), `No invitation with id '${id}' found.`)
 
     const invitation = this.state.invitations[id]
