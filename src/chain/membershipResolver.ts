@@ -133,6 +133,8 @@ const addedNotIn = (excludeList: string[]) => (link: TeamActionLink): boolean =>
       const addAction = link.body as LinkBody<AddMemberRoleAction>
       return addAction.payload.userName
     }
+    // ignore coverage
+    else throw new Error()
   }
 
   if (!isAddAction(link)) return true // only concerned with add actions
