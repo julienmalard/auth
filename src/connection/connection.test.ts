@@ -775,11 +775,18 @@ describe('connection', () => {
     // GRRR foiled again
     await disconnection(bob, charlie)
 
-    // TODO: Alice sends Bob a new invitation; he's able to use it to connect from his phone
+    // TODO: Figure out how to get Bob back onto team when his only device is compromised
 
-    // const { seed } = bob.team.invite({ deviceName: 'phone' })
-    // bob.phone.keys = generateStarterKeys({ type: DEVICE, name: getDeviceId(bob.phone) }, seed)
-    // await connectPhoneWithInvitation(bob, seed)
+    // - bob is a member
+    // - but bob has no devices
+    // - member invitation won't work, because he's already a member
+    // - device invitation won't work, because you can only invite your own devices, and bob doesn't
+    //   have a device to send an invite *from*
+    //
+    // options:
+    // - could remove him as user, then re-add
+    // - could implement "paper keys"
+    // -
   })
 
   it('allows Alice and Bob to send each other encrypted messages', async done => {
