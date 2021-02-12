@@ -782,7 +782,7 @@ describe('connection', () => {
     // await connectPhoneWithInvitation(bob, seed)
   })
 
-  it.only('allows Alice and Bob to send each other encrypted messages', async done => {
+  it('allows Alice and Bob to send each other encrypted messages', async done => {
     const { alice, bob } = setup('alice', 'bob')
 
     // 👩🏾 👨🏻‍🦲 Alice and Bob both join the channel
