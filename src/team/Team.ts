@@ -1,19 +1,25 @@
-﻿import { randomKey, signatures, symmetric } from '@herbcaudill/crypto'
+﻿import { Base64, randomKey, signatures, symmetric } from '@herbcaudill/crypto'
 import { EventEmitter } from 'events'
 import { generateStarterKeys } from '../invitation/generateStarterKeys'
 import { keysetSummary } from '../util/keysetSummary'
 import * as chains from '/chain'
 import {
   chainSummary,
+  getParentHashes,
   membershipResolver,
   TeamAction,
   TeamActionLink,
+  TeamLink,
+  TeamLinkMap,
   TeamSignatureChain,
 } from '/chain'
 import { membershipSequencer } from '/chain/membershipSequencer'
+import { Challenge } from '/connection'
+import * as identity from '/connection/identity'
+import { MissingLinksMessage, UpdateMessage } from '/connection/message'
 import { LocalDeviceContext, LocalUserContext } from '/context'
 import * as devices from '/device'
-import { getDeviceId, PublicDevice, redactDevice } from '/device'
+import { getDeviceId, parseDeviceId, PublicDevice, redactDevice } from '/device'
 import * as invitations from '/invitation'
 import { Invitee, ProofOfInvitation } from '/invitation'
 import { normalize } from '/invitation/normalize'
@@ -40,7 +46,7 @@ import { getVisibleScopes } from '/team/selectors'
 import { EncryptedEnvelope, isNewTeam, SignedEnvelope, TeamOptions, TeamState } from '/team/types'
 import * as users from '/user'
 import { User } from '/user'
-import { assert, debug, Hash, lockboxSummary, Payload } from '/util'
+import { arrayToMap, assert, debug, Hash, Payload } from '/util'
 
 const { DEVICE, ROLE, MEMBER } = KeyType
 
@@ -114,12 +120,6 @@ export class Team extends EventEmitter {
 
   public save = () => chains.serialize(this.chain)
 
-  public merge = (theirChain: TeamSignatureChain) => {
-    this.chain = chains.merge(this.chain, theirChain)
-    this.updateState()
-    return this
-  }
-
   /** Add a link to the chain, then recompute team state from the new chain */
   public dispatch(action: TeamAction) {
     this.chain = chains.append(this.chain, action, this.context as LocalUserContext)
@@ -149,6 +149,70 @@ export class Team extends EventEmitter {
     this.state = sequence.reduce(reducer, initialState)
 
     this.emit('updated', { head: this.chain.head })
+  }
+
+  public merge = (theirChain: TeamSignatureChain) => {
+    this.chain = chains.merge(this.chain, theirChain)
+    this.updateState()
+    return this
+  }
+
+  public getMissingLinks = ({
+    root: theirRoot,
+    head: theirHead,
+    hashes: theirHashes,
+  }: UpdateMessage['payload']): TeamLink[] => {
+    const { root, head, links } = this.chain
+    const hashes = Object.keys(links)
+
+    assert(root === theirRoot, `Our roots should be the same`)
+
+    return theirHead === head
+      ? // if we have the same head, there are no missing links
+        []
+      : // otherwise send every link that we have that they don't have
+        hashes.filter(hash => theirHashes.includes(hash) === false).map(hash => links[hash])
+  }
+
+  public receiveMissingLinks = ({
+    head: theirHead,
+    links: theirLinks,
+  }: MissingLinksMessage['payload']) => {
+    const { root, links } = this.chain
+
+    const allLinks = {
+      // all our links
+      ...links,
+      // all their new links, converted from an array to a hashmap
+      ...theirLinks.reduce(arrayToMap('hash'), {}),
+    } as TeamLinkMap
+
+    // make sure we're not missing any links that are referenced by these new links (shouldn't happen)
+    const parentHashes = theirLinks.flatMap(link => getParentHashes(this.chain, link))
+    const missingParents = parentHashes.filter(hash => !(hash in allLinks))
+    assert(missingParents.length === 0, `Can't update; missing parent links`)
+
+    // we can now reconstruct their chain
+    const theirChain = { root, head: theirHead, links: allLinks }
+
+    // and merge with it
+    return this.merge(theirChain)
+  }
+
+  public identityIsKnown = (identityClaim: KeyScope): boolean => {
+    assert(identityClaim.type === DEVICE) // we always authenticate as devices now
+    const deviceId = identityClaim.name
+    const { userName, deviceName } = parseDeviceId(deviceId)
+    return this.hasDevice(userName, deviceName)
+  }
+
+  public verifyIdentity = (challenge: Challenge, proof: Base64) => {
+    assert(challenge.type === DEVICE) // we always authenticate as devices now
+    const deviceId = challenge.name
+    const { userName, deviceName } = parseDeviceId(deviceId)
+    const device = this.device(userName, deviceName)
+    const validation = identity.verify(challenge, proof, device.keys)
+    return validation.isValid
   }
 
   /**************** MEMBERS
@@ -309,12 +373,20 @@ export class Team extends EventEmitter {
   /**************** DEVICES
    */
 
+  /** Returns true if the given member has a device by the given name */
+  public hasDevice = (userName: string, deviceName: string): boolean =>
+    select.hasDevice(this.state, userName, deviceName)
+
   /** Find a member's device by name */
   public device = (userName: string, deviceName: string): PublicDevice =>
     select.device(this.state, userName, deviceName)
 
   /** Remove a member's device */
   public removeDevice = (userName: string, deviceName: string) => {
+    assert(
+      this.hasDevice(userName, deviceName),
+      `Member ${userName} does not have a device called ${deviceName}`
+    )
     // create new keys & lockboxes for any keys this device had access to
     const deviceId = getDeviceId({ userName, deviceName })
     const lockboxes = this.generateNewLockboxes({ type: DEVICE, name: deviceId })
@@ -425,7 +497,7 @@ export class Team extends EventEmitter {
     return { seed, id: invitation.id }
   }
 
-  /** Revoke an invitation. */
+  /** Revoke an invitation and remove the member or device that was invited. */
   public revokeInvitation = (id: string) => {
     // remove the device or user that was invited
     const invitation = this.getInvitation(id)
@@ -455,7 +527,7 @@ export class Team extends EventEmitter {
   }
 
   public getInvitation = (id: string) => {
-    // make sure the invitation exists
+    // throw if the invitation doesn't exist
     assert(this.hasInvitation(id), `No invitation with id '${id}' found.`)
 
     const invitation = this.state.invitations[id]

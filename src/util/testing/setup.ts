@@ -111,7 +111,7 @@ export const setup = (
       device,
       localContext,
       phone,
-      connectionContext,
+      context: connectionContext,
       connection,
       getState,
     }
@@ -139,7 +139,7 @@ export interface UserStuff {
   device: DeviceWithSecrets
   phone: DeviceWithSecrets
   localContext: LocalUserContext
-  connectionContext: InitialContext
+  context: InitialContext
   connection: Record<string, Connection>
   getState: (peer: string) => any
 }

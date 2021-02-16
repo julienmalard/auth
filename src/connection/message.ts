@@ -3,6 +3,7 @@ import { TeamLink } from '/chain'
 import { ProofOfInvitation } from '/invitation'
 import { KeyScope } from '/keyset'
 import { Base64, Hash } from '/util'
+import { EncryptedEnvelope } from '/team'
 
 export type ReadyMessage = {
   type: 'READY'
@@ -108,6 +109,13 @@ export type SeedMessage = {
   }
 }
 
+// Communication
+
+export type EncryptedMessage = {
+  type: 'ENCRYPTED_MESSAGE'
+  payload: Base64
+}
+
 export type ConnectionMessage =
   | ReadyMessage
   | HelloMessage
@@ -122,6 +130,7 @@ export type ConnectionMessage =
   | LocalUpdateMessage
   | MissingLinksMessage
   | SeedMessage
+  | EncryptedMessage
 
 export type NumberedConnectionMessage = ConnectionMessage & {
   index: number

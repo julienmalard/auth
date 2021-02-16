@@ -46,6 +46,7 @@ const validators: TeamStateValidatorSet = {
 
     const { userName } = link.signed
     const author = select.member(prevState, userName)
+    // TODO: test this case
     if (link.signed.key !== author.keys.signature) {
       const msg = `Wrong signature key. Link is signed with ${link.signed.key}, but ${userName}'s signature key is ${author.keys.signature}`
       return fail(msg, ...args)
@@ -101,6 +102,7 @@ const validators: TeamStateValidatorSet = {
       const { deviceName, userName } = device
       const member = select.member(prevState, userName)
       const { devices = [] } = member
+      // TODO: test this case
       if (devices.find(d => d.deviceName === deviceName))
         return fail(`The member ${userName} already has a device named '${deviceName}'`, ...args)
     }

@@ -319,7 +319,7 @@ export const protocolMachine: MachineConfig<
             { target: 'waiting' },
           ],
           exit: [
-            'refreshContext', // we might have received new peer info (e.g. keys)
+            'storePeer', // we might have received new peer info (e.g. keys)
             'sendUpdate', // either way let them know our status
           ],
         },
@@ -340,7 +340,7 @@ export const protocolMachine: MachineConfig<
         {
           cond: 'dontHaveSessionkey',
           actions: [
-            'listenForUpdates', // add listener to team, so we trigger this process again if needed
+            'listenForTeamUpdates', // add listener to team, so we trigger this process again if needed
             'generateSeed',
           ],
           target: 'negotiating',
@@ -419,6 +419,12 @@ export const protocolMachine: MachineConfig<
         UPDATE: {
           cond: 'headsAreDifferent',
           target: '#synchronizing',
+        },
+
+        // deliver any encrypted messages
+        ENCRYPTED_MESSAGE: {
+          actions: ['receiveEncryptedMessage'],
+          target: 'connected',
         },
       },
     },

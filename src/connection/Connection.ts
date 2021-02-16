@@ -1,10 +1,8 @@
-﻿import { asymmetric } from '@herbcaudill/crypto'
+﻿import { asymmetric, Payload, symmetric } from '@herbcaudill/crypto'
 import { EventEmitter } from 'events'
-import * as R from 'ramda'
 import { Transform } from 'stream'
 import { assign, createMachine, interpret, Interpreter } from 'xstate'
 import { protocolMachine } from './protocolMachine'
-import { getParentHashes, TeamLinkMap } from '/chain'
 import { deriveSharedKey } from '/connection/deriveSharedKey'
 import * as identity from '/connection/identity'
 import {
@@ -12,6 +10,7 @@ import {
   ChallengeIdentityMessage,
   ConnectionMessage,
   DisconnectMessage,
+  EncryptedMessage,
   ErrorMessage,
   HelloMessage,
   LocalUpdateMessage,
@@ -189,7 +188,14 @@ export class Connection extends EventEmitter {
     )
   }
 
-  // TODO: The numbering & ordering should probably should be implemented as a separate duplex stream in the pipeline
+  /** Sends an encrypted message to the peer we're connected with */
+  public send = (message: Payload) => {
+    assert(this.context.sessionKey)
+    console.log('sessionKey (send)', this.context.sessionKey)
+
+    const encryptedMessage = symmetric.encrypt(message, this.context.sessionKey)
+    this.sendMessage({ type: 'ENCRYPTED_MESSAGE', payload: encryptedMessage })
+  }
 
   /** Passes an incoming message from the peer on to this protocol machine, guaranteeing that
    *  messages will be delivered in the intended order (according to the `index` field on the message) */
@@ -224,6 +230,8 @@ export class Connection extends EventEmitter {
 
   /** These are referred to by name in `connectionMachine` (e.g. `actions: 'sendHello'`) */
   private readonly actions: Record<string, StateMachineAction> = {
+    // initializing
+
     sendHello: async context => {
       this.sendMessage({
         type: 'HELLO',
@@ -294,7 +302,6 @@ export class Connection extends EventEmitter {
     proveIdentity: (context, event) => {
       assert(context.user)
       const { challenge } = (event as ChallengeIdentityMessage).payload
-      // TODO: proof = team.proveIdentity(challenge)
       const proof = identity.prove(challenge, context.device.keys)
       this.sendMessage({
         type: 'PROVE_IDENTITY',
@@ -306,10 +313,15 @@ export class Connection extends EventEmitter {
       peer: context => {
         assert(context.team)
         assert(context.theirIdentityClaim)
-        // TODO: team.members(theirIdentityClaim) ?
         const deviceId = context.theirIdentityClaim.name
         const { userName } = parseDeviceId(deviceId)
-        return context.team.members(userName)
+        if (context.team.has(userName)) {
+          // peer still on the team
+          return context.team.members(userName)
+        } else {
+          // peer was removed from team
+          return undefined
+        }
       },
     }),
 
@@ -341,32 +353,12 @@ export class Connection extends EventEmitter {
 
     sendMissingLinks: (context, event) => {
       assert(context.team)
-      const { chain } = context.team
-      const { root, head, links } = chain
-      const hashes = Object.keys(links)
-
-      const {
-        root: theirRoot,
-        head: theirHead,
-        hashes: theirHashes,
-      } = (event as UpdateMessage).payload
-
-      // TODO: const missingLinks = team.getMissingLinks({theirRoot, theirHead, theirHashes})
-
-      assert(root === theirRoot, `Our roots should be the same`)
-
-      // if we have the same head, there are no missing links
-      if (theirHead === head) return
-
-      // send them every link that we have that they don't have
-      const missingLinks = hashes
-        .filter(hash => theirHashes.includes(hash) === false)
-        .map(hash => links[hash])
-
-      if (missingLinks.length > 0) {
+      const { payload } = event as UpdateMessage
+      const links = context.team.getMissingLinks(payload)
+      if (links.length > 0) {
         this.sendMessage({
           type: 'MISSING_LINKS',
-          payload: { head, links: missingLinks },
+          payload: { head: context.team.chain.head, links },
         })
       }
     },
@@ -374,56 +366,12 @@ export class Connection extends EventEmitter {
     receiveMissingLinks: assign({
       team: (context, event) => {
         assert(context.team)
-
-        // TODO: team.receiveMissingLinks(theirHead, theirLinks)
-        const { chain } = context.team
-
-        const { root, links } = chain
-        const { head: theirHead, links: theirLinksArray } = (event as MissingLinksMessage).payload
-        const theirLinks = theirLinksArray.reduce(arrayToMap('hash'), {})
-
-        const allLinks = {
-          // all our links
-          ...links,
-          // all their new links, converted from an array to a hashmap
-          ...theirLinks,
-        } as TeamLinkMap
-
-        // make sure we're not missing any links that are referenced by these new links (shouldn't happen)
-        const parentHashes = theirLinksArray.flatMap(link => getParentHashes(chain, link))
-        const missingParents = parentHashes.filter(hash => !(hash in allLinks))
-        assert(
-          missingParents.length === 0,
-          `Can't update; missing parent links: \n${missingParents.join('\n')}`
-        )
-
-        // we can now reconstruct their chain
-        const theirChain = { root, head: theirHead, links: allLinks }
-
-        // and merge with it
-        return context.team.merge(theirChain)
+        const { payload } = event as MissingLinksMessage
+        return context.team.receiveMissingLinks(payload)
       },
     }),
 
-    refreshContext: assign({
-      // Following an update, we may have new information about the peer
-      // (specifically, if they just joined with an invitation, we'll have received
-      // their real public keys). So we need to get that on context now.
-      peer: context => {
-        assert(context.peer)
-        assert(context.team)
-        const userName = context.peer.userName
-        if (context.team.has(userName)) {
-          // peer still on the team
-          return context.team.members(userName)
-        } else {
-          // peer was removed from team
-          return undefined
-        }
-      },
-    }),
-
-    listenForUpdates: context => {
+    listenForTeamUpdates: context => {
       assert(context.team)
       context.team.addListener('updated', ({ head }) => {
         if (!this.machine.state.done) {
@@ -482,6 +430,16 @@ export class Connection extends EventEmitter {
       },
     }),
 
+    // communicating
+
+    receiveEncryptedMessage: (context, event) => {
+      assert(context.sessionKey)
+      const encryptedMessage = (event as EncryptedMessage).payload
+      console.log('sessionKey', context.sessionKey)
+      const decryptedMessage = symmetric.decrypt(encryptedMessage, context.sessionKey)
+      this.emit('message', decryptedMessage)
+    },
+
     // failure
 
     receiveError: assign({
@@ -536,35 +494,15 @@ export class Connection extends EventEmitter {
     },
 
     identityIsKnown: context => {
-      // TODO: much of this should be moved to Team
-      if (context.team === undefined) return true
-      const deviceId = context.theirIdentityClaim!.name
-      const { userName, deviceName } = parseDeviceId(deviceId)
-      return (
-        context.team.has(userName) &&
-        context.team
-          .members(userName)
-          .devices!.map(d => d.deviceName)
-          .includes(deviceName)
-      )
+      if (context.team === undefined) return true // we're not on the team yet so we can't say if they're a member
+      assert(context.theirIdentityClaim)
+      return context.team.identityIsKnown(context.theirIdentityClaim)
     },
 
     identityProofIsValid: (context, event) => {
-      // TODO: much of this should be moved to Team
       assert(context.team)
-      const { team, challenge: originalChallenge } = context
       const { challenge, proof } = (event as ProveIdentityMessage).payload
-
-      if (!R.equals(originalChallenge, challenge)) return false // proof applies to a different challenge
-
-      const deviceId = challenge.name
-      const { userName, deviceName } = parseDeviceId(deviceId)
-
-      const device = team.device(userName, deviceName)
-
-      const publicKeys = device.keys
-      const validation = identity.verify(challenge, proof, publicKeys)
-      return validation.isValid
+      return context.team.verifyIdentity(challenge, proof)
     },
 
     headsAreEqual: (context, event) => {
